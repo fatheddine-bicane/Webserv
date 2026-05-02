@@ -1,0 +1,20 @@
+<!-- this file is to test the 'Content-Type: multipart/form-data' that is used when a file upload is included -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Multipart Form Test</title>
+	</head>
+	<body>
+		<!-- the action points to httpbin, which simply echoes the request back -->
+		<!-- the enctype forces the boundary generation -->
+		<form action="https://httpbin.org/post" method="POST" enctype="multipart/form-data">
+			<label>Username:</label>
+			<input type="text" name="username" value="admin"><br><br>
+
+			<label>File to upload:</label>
+			<input type="file" name="uploaded_document"><br><br>
+
+			<button type="submit">Send Request</button>
+		</form>
+	</body>
+</html>
