@@ -32,4 +32,8 @@ fclean : clean
 	@echo "$(RED)Removing webserv$(RESET)"
 	@rm -f webserv
 
+nginx_t:
+	@echo "$(RED)Testing config file using nginx$(RESET)"
+	@docker compose run --rm web nginx -t
+
 re : fclean all
