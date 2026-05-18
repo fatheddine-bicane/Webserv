@@ -2,4 +2,5 @@
 
 int main(int argc, char** argv) {
 	std::cout << "Hello from webserv" << std::endl;
+	return 0;
 }
