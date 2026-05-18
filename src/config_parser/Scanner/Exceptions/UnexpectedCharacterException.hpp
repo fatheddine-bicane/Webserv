@@ -4,7 +4,7 @@
 #include <exception>
 #include <string>
 
-class UnexpectedCharacterException : std::exception {
+class UnexpectedCharacterException : public std::exception {
 private:
 	std::string _err;
 
