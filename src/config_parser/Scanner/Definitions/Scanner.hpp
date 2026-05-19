@@ -12,7 +12,7 @@ typedef std::string String;
 
 class Scanner {
 private:
-	String	_source;
+	String&	_source;
 	int		_start;
 	int		_current;
 	int		_line;
@@ -20,7 +20,7 @@ private:
 	std::vector<Token> _tokens;
 
 public:
-	Scanner(const String& source);
+	Scanner(String& source);
 	std::vector<Token>	scanTokens();
 
 private:

@@ -4,8 +4,8 @@
 #include <vector>
 
 
-Scanner::Scanner(const String& source) {
-	this->_source = source;
+Scanner::Scanner(String& source) :
+	_source(source) {
 	this->_start = 0;
 	this->_current = 0;
 	this->_line = 1;
