@@ -1,6 +1,11 @@
 #include "../Definitions/Scanner.hpp"
+#include <algorithm>
 #include <cctype>
+#include <cstdio>
+#include <iostream>
 #include <map>
+#include <sstream>
+#include <string>
 #include <vector>
 
 
@@ -9,6 +14,9 @@ Scanner::Scanner(String& source) :
 	this->_start = 0;
 	this->_current = 0;
 	this->_line = 1;
+	this->_spaces = 0;
+	this->_tabs = 0;
+	this->_line_start = 0;
 
 	this->_keywords.insert(std::make_pair("events",                EVENTS));
 	this->_keywords.insert(std::make_pair("http",                  HTTP));
@@ -50,8 +58,10 @@ void	Scanner::scanToken() {
 
 		// comments
 		case '#':
-			while (peek() != '\n' && !isAtEnd())
+			while (peek() != '\n' && !isAtEnd()) {
 				consume();
+			}
+			break;
 
 		// ignore white spaces
 		case ' ' :
@@ -60,14 +70,19 @@ void	Scanner::scanToken() {
 			break;
 
 		// new lines
-		case '\n': this->_line++; break;
+		case '\n':
+			this->_line++;
+			this->_spaces = 0;
+			this->_tabs = 0;
+			this->_line_start = this->_current;
+			break;
 
 		// token encountered is a word
 		default:
 			if (isValidChar(c)) {
 				identifier();
 			} else {
-				throw UnexpectedCharacterException("Unexpected character");
+				throw UnexpectedCharacterException(generateErrorString());
 			}
 	}
 }
@@ -90,22 +105,57 @@ void	Scanner::identifier() {
 }
 
 void	Scanner::addToken(TokenType token_type) {
-	addToken(token_type, "");
+	String lexeme = this->_source.substr(this->_start, this->_current - this->_start);
+	addToken(token_type, lexeme);
 }
 
 void	Scanner::addToken(TokenType token_type, String lexeme) {
-	// TODO: set the correct position index
 	this->_tokens.push_back(
-		Token(token_type, lexeme, this->_line, -1));
+		Token(token_type, ("[" + lexeme+ "]"), this->_line,
+			  this->_spaces + this->_tabs*4, this->_spaces,
+			  this->_tabs, this->_line_start));
+}
+
+String	Scanner::generateErrorString() {
+	std::stringstream ss;
+
+	ss << RED << "Error:" << this->_line << ":"
+	   << this->_spaces + this->_tabs*4 << ": "
+	   << RESET << "Unexpected character: '"
+	   <<  this->_source.at(this->_current - 1)
+	   << "'" << '\n';
+
+	int end_of_line = this->_source.find('\n', this->_line_start);
+	String line = this->_source.substr(this->_line_start, end_of_line - this->_line_start);
+	ss << line << '\n';
+
+	int count = 0;
+	while (count < this->_tabs) {
+		ss << '\t';
+		count++;
+	}
+	count = 1;
+	while (count < this->_spaces) {
+		ss << ' ';
+		count++;
+	}
+	ss << RED << "^" << RESET;
+
+	return ss.str();
 }
 
 bool	Scanner::isValidChar(char c) {
+
 	return (std::isdigit(c) || std::isalpha(c) ||
-			c == '_' || c == '-' || c == '/' || c == '.');
+			c == '_' || c == '-' || c == '/' || c == '.' || c == ':');
 }
 
 char	Scanner::consume() {
-	return (this->_source.at(this->_current++));
+	char c = this->_source.at(this->_current++);
+
+	c == '\t' ? this->_tabs++ : this->_spaces++;
+
+	return c;
 }
 
 char	Scanner::peek() {
