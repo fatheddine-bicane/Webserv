@@ -8,13 +8,17 @@ typedef std::string String;
 
 
 class Token {
-private:
+public:
 	TokenType	_token_type;
 	String		_lexeme;
 	int			_line;
 	int			_position;
+	int			_spaces;
+	int			_tabs;
+	int			_line_start;
 
 public:
-	Token(TokenType token_type, String lexeme, int line, int position);
-	String	toString();
+	Token(TokenType token_type, String lexeme, int line,
+		  int position, int spaces, int tabs, int line_start);
+	String	toString(String& source);
 };
