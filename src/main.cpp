@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "./config_parser/Scanner/Definitions/Scanner.hpp"
+#include "config_parser/Parser/Definitions/Parser.hpp"
 #include "config_parser/Scanner/Definitions/Token.hpp"
 
 int main(int argc, char** argv) {
@@ -23,20 +24,25 @@ int main(int argc, char** argv) {
 	std::cout << "------------------" << std::endl;
 
 
-	// initialise scanner 
 	String source = ss.str();
-	Scanner scanner(source);
 
 	// scan config file
 	try {
+		// initialise scanner 
+		Scanner scanner(source);
 		std::vector<Token> tokens = scanner.scanTokens();
 
+		// initialise parser
+		Parser parser(tokens, source);
+		parser.scanTokens();
 
-		std::vector<Token>::iterator it = tokens.begin();
-		std::vector<Token>::iterator end = tokens.end();
-		for (; it != end; it++) {
-			std::cout << it->toString(source);
-		}
+
+
+		// std::vector<Token>::iterator it = tokens.begin();
+		// std::vector<Token>::iterator end = tokens.end();
+		// for (; it != end; it++) {
+		// 	std::cout << it->toString(source);
+		// }
 
 	} catch (std::exception& e) {
 		std::cout << e.what() << std::endl;
