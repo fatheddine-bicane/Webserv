@@ -82,3 +82,58 @@ public:
 
 	~ExpectedTokenException() throw() {}
 };
+
+
+
+class IncorrectValueException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	IncorrectValueException(const Token& token, const String& source) {
+		this->_err = generateForematedError(token, "incorrect value", source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~IncorrectValueException() throw() {}
+};
+
+
+
+class InvalidNumberOfArgumentsException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	InvalidNumberOfArgumentsException(const Token& token, const String& source) {
+		String error_type = "invalid number of arguments in directive";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~InvalidNumberOfArgumentsException() throw() {}
+};
+
+
+
+class UnexpectedTokenException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	UnexpectedTokenException(const Token& token, const String& source) {
+		this->_err = generateForematedError(token, "unexpected token", source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~UnexpectedTokenException() throw() {}
+};

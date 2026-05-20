@@ -135,6 +135,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& http_context) {
 	while (!match(token, CONTEXT_END)) {
 		switch (token._token_type) {
 			case ROOT: parseRoot(http_context); break;
+			case ERROR_PAGE: parseErrorPage(http_context); break;
 
 			default: break;
 		}
@@ -152,6 +153,42 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& http_context) {
 void	Parser::parseRoot(SharedDirectives& http_context) {
 	Token token = consume();
 	http_context.root = token._lexeme;
+	expect(SEMICOLON);
+}
+
+void	Parser::parseErrorPage(SharedDirectives& http_context) {
+	Token error_page = currentToken();
+	std::vector<int> error_codes;
+	int argument_count = 0;
+
+	Token token = consume();
+	while (!match(peek(), SEMICOLON)) {
+		char*	end = NULL;
+		long	error_code = std::strtol(token._lexeme.c_str(), &end, 10);
+		if (*end != '\0') {
+			throw UnexpectedTokenException(currentToken(), this->_source);
+		} else if (!(error_code >= 300 && error_code <= 599)) {
+			throw IncorrectValueException(currentToken(), this->_source);
+		}
+
+		error_codes.push_back(error_code);
+		argument_count++;
+		token = consume();
+	}
+
+	if (argument_count < 2) {
+		throw InvalidNumberOfArgumentsException(error_page, this->_source);
+	}
+
+	String file = token._lexeme;
+
+	std::vector<int>::iterator it = error_codes.begin();
+	std::vector<int>::iterator end = error_codes.end();
+
+	for (; it != end; it++) {
+		http_context.error_page.insert(std::make_pair(*it, file));
+	}
+
 	expect(SEMICOLON);
 }
 

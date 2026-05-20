@@ -55,4 +55,6 @@ private:
 // INFO: simple directive parsers
 private:
 	void	parseRoot(SharedDirectives& http_context);
+	void	parseErrorPage(SharedDirectives& http_context);
+
 };
