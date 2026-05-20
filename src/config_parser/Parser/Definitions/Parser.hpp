@@ -47,4 +47,5 @@ private:
 // INFO: block directive parsers (context)
 private:
 	void	parseEvents();
+	void	parseHttp(Servers& servers, SharedDirectives& http_context);
 };

@@ -40,6 +40,7 @@ Servers	Parser::scanTokens() {
 
 void	Parser::scanToken(Servers& servers, SharedDirectives& http_context) {
 	static bool is_events_parsed = false;
+	static bool is_http_parsed = false;
 
 	Token token = consume();
 
@@ -51,6 +52,15 @@ void	Parser::scanToken(Servers& servers, SharedDirectives& http_context) {
 			parseEvents();
 			is_events_parsed = true;
 			break;
+		case HTTP:
+			if (is_http_parsed) {
+				throw DuplicatedDirectiveException(currentToken(), this->_source);
+			}
+			parseHttp(servers, http_context);
+			is_http_parsed = true;
+			break;
+
+
 		default: break;
 	}
 }
@@ -94,4 +104,28 @@ bool	Parser::isAtEnd() {
 
 // -----------------------------------------------------------------
 
+
+
+// INFO: block directive parsers (context)
+// -----------------------------------------------------------------
+
+void	Parser::parseEvents() {
+	expect(CONTEXT_START);
+	expect(CONTEXT_END);
+}
+
+void	Parser::parseHttp(Servers& servers, SharedDirectives& http_context) {
+	(void) servers;
+	expect(CONTEXT_START);
 	Token token = consume();
+
+	while (!match(token, CONTEXT_END)) {
+		switch (token._token_type) {
+
+			default: break;
+		}
+		token = consume();
+	}
+}
+
+// -----------------------------------------------------------------
