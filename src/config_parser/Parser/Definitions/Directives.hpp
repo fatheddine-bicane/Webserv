@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <set>
 #include <string>
 #include <utility>
@@ -15,7 +16,7 @@ typedef std::string String;
 class SharedDirectives {
 public:
 	String								root; // default: html
-	std::pair<std::set<int>, String>	error_page;
+	std::map<int, String>				error_page;
 	unsigned long						client_max_body_size; // default: 1m
 	String								client_body_temp_path;
 	bool								autoindex; // defaule: false
