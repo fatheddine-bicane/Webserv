@@ -50,4 +50,9 @@ private:
 private:
 	void	parseEvents();
 	void	parseHttp(Servers& servers, SharedDirectives& http_context);
+
+
+// INFO: simple directive parsers
+private:
+	void	parseRoot(SharedDirectives& http_context);
 };

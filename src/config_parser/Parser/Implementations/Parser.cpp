@@ -134,11 +134,25 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& http_context) {
 
 	while (!match(token, CONTEXT_END)) {
 		switch (token._token_type) {
+			case ROOT: parseRoot(http_context); break;
 
 			default: break;
 		}
 		token = consume();
 	}
+}
+
+// -----------------------------------------------------------------
+
+
+
+// INFO: simple directive parsers
+// -----------------------------------------------------------------
+
+void	Parser::parseRoot(SharedDirectives& http_context) {
+	Token token = consume();
+	http_context.root = token._lexeme;
+	expect(SEMICOLON);
 }
 
 // -----------------------------------------------------------------
