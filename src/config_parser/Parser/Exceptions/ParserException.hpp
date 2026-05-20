@@ -63,3 +63,22 @@ public:
 
 	~DuplicatedDirectiveException () throw() {}
 };
+
+
+class ExpectedTokenException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	ExpectedTokenException(const Token& token, String& missing_token, String& source) {
+
+		String error_type = "expected token '" + missing_token + "' after";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~ExpectedTokenException() throw() {}
+};

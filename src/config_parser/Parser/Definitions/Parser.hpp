@@ -38,11 +38,13 @@ private:
 
 	Token	consume();
 	Token	currentToken();
+	Token	previousToken();
 	Token	peek();
 	void	expect(TokenType token_type);
 	bool	match(TokenType to_match);
 	bool	match(Token token, TokenType to_match);
 	bool	isAtEnd();
+
 
 // INFO: block directive parsers (context)
 private:

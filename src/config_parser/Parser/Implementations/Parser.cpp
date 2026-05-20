@@ -76,6 +76,11 @@ Token	Parser::currentToken() {
 }
 
 
+Token	Parser::previousToken() {
+	return (this->_tokens.at(this->_current - 2));
+}
+
+
 Token	Parser::peek() {
 	return (this->_tokens.at(this->_current));
 }
@@ -83,7 +88,15 @@ Token	Parser::peek() {
 
 void	Parser::expect(TokenType token_type) {
 	if (consume()._token_type != token_type) {
-		throw ExpectedTokenException(currentToken(), this->_source);
+		String missing_token;
+		switch (token_type) {
+			case CONTEXT_START: missing_token = "{"; break;
+			case CONTEXT_END: missing_token = "}"; break;
+			case SEMICOLON: missing_token = ";"; break;
+
+			default: break;
+		}
+		throw ExpectedTokenException(previousToken(), missing_token, this->_source);
 	}
 }
 
