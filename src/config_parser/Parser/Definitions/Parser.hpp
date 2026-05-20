@@ -1,0 +1,46 @@
+#pragma once
+
+#include <vector>
+#include <utility>
+#include <map>
+#include <cstdlib>
+
+#include "../Definitions/Directives.hpp"
+#include "../../Scanner/Definitions/Token.hpp"
+#include "../../Scanner/Definitions/TokenType.hpp"
+
+typedef std::string String;
+typedef std::map<String, Server>	Servers;
+
+
+class Parser {
+private:
+	String&				_source;
+	int					_current;
+	std::vector<Token>	_tokens;
+	int					_servers_count;
+
+
+// INFO: constructors
+public:
+	Parser(std::vector<Token> tokens, String& source);
+
+
+// INFO: API
+public:
+	Servers	scanTokens();
+
+
+// INFO: utility functions
+private:
+	void	scanToken(Servers& servers, SharedDirectives& http_context);
+
+	Token	consume();
+	Token	currentToken();
+	Token	peek();
+	void	expect(TokenType token_type);
+	bool	match(TokenType to_match);
+	bool	match(Token token, TokenType to_match);
+	bool	isAtEnd();
+
+};
