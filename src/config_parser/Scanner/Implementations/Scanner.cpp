@@ -111,7 +111,7 @@ void	Scanner::addToken(TokenType token_type) {
 
 void	Scanner::addToken(TokenType token_type, String lexeme) {
 	this->_tokens.push_back(
-		Token(token_type, ("[" + lexeme+ "]"), this->_line,
+		Token(token_type, (lexeme), this->_line,
 			  this->_spaces + this->_tabs*4, this->_spaces,
 			  this->_tabs, this->_line_start));
 }
