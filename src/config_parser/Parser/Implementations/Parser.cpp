@@ -39,9 +39,18 @@ Servers	Parser::scanTokens() {
 // -----------------------------------------------------------------
 
 void	Parser::scanToken(Servers& servers, SharedDirectives& http_context) {
+	static bool is_events_parsed = false;
+
 	Token token = consume();
 
 	switch (token._token_type) {
+		case EVENTS:
+			if (is_events_parsed) {
+				throw DuplicatedDirectiveException(currentToken(), this->_source);
+			}
+			parseEvents();
+			is_events_parsed = true;
+			break;
 		default: break;
 	}
 }

@@ -46,3 +46,20 @@ protected:
 
 };
 
+
+
+class DuplicatedDirectiveException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	DuplicatedDirectiveException (const Token& token, const String& source) {
+		this->_err = generateForematedError(token, "duplicated directive", source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~DuplicatedDirectiveException () throw() {}
+};

@@ -8,6 +8,7 @@
 #include "../Definitions/Directives.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
 #include "../../Scanner/Definitions/TokenType.hpp"
+#include "../Exceptions/ParserException.hpp"
 
 typedef std::string String;
 typedef std::map<String, Server>	Servers;
@@ -43,4 +44,7 @@ private:
 	bool	match(Token token, TokenType to_match);
 	bool	isAtEnd();
 
+// INFO: block directive parsers (context)
+private:
+	void	parseEvents();
 };
