@@ -16,26 +16,26 @@ protected:
 									   const String& source) {
 		std::stringstream ss;
 
-		ss << RED << "Error:" << token._line << ":"
-			<< token._spaces + token._tabs*4 << ": "
+		ss << RED << "Error:" << token.line << ":"
+			<< token.spaces + token.tabs*4 << ": "
 			<< RESET << error_type << ": '"
-			<< token._lexeme
+			<< token.lexeme
 			<< "'" << '\n';
 
-		size_t end_of_line = source.find('\n', token._line_start);
+		size_t end_of_line = source.find('\n', token.line_start);
 		if (end_of_line == String::npos) {
 			end_of_line = source.length();
 		}
-		String line = source.substr(token._line_start, end_of_line - token._line_start);
+		String line = source.substr(token.line_start, end_of_line - token.line_start);
 		ss << line << '\n';
 
 		int count = 0;
-		while (count < token._tabs) {
+		while (count < token.tabs) {
 			ss << '\t';
 			count++;
 		}
 		count = 1;
-		while (count < token._spaces) {
+		while (count < token.spaces) {
 			ss << ' ';
 			count++;
 		}
@@ -132,7 +132,7 @@ public:
 	}
 
 	UnexpectedTokenException(Token& token, const String& token_value,  const String& source) {
-		token._lexeme = token_value;
+		token.lexeme = token_value;
 		this->_err = generateForematedError(token, "unexpected token", source);
 	}
 
@@ -169,8 +169,8 @@ private:
 
 public:
 	InvalidValueExceptions(Token& token, const String& directive, const String& source) {
-		String value = token._lexeme;
-		token._lexeme = directive;
+		String value = token.lexeme;
+		token.lexeme = directive;
 		String error_type = "invalid value '" + value + "' in directive";
 		this->_err = generateForematedError(token, error_type, source);
 	}

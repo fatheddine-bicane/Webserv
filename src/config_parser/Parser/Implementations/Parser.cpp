@@ -44,7 +44,7 @@ void	Parser::scanToken(Servers& servers, SharedDirectives& directive_context) {
 
 	Token token = consume();
 
-	switch (token._token_type) {
+	switch (token.type) {
 		case EVENTS:
 			if (is_events_parsed) {
 				throw DuplicatedDirectiveException(currentToken(), this->_source);
@@ -87,7 +87,7 @@ Token	Parser::peek() {
 
 
 void	Parser::expect(TokenType token_type) {
-	if (consume()._token_type != token_type) {
+	if (consume().type != token_type) {
 		String missing_token;
 		switch (token_type) {
 			case CONTEXT_START: missing_token = "{"; break;
@@ -102,17 +102,17 @@ void	Parser::expect(TokenType token_type) {
 
 
 bool	Parser::match(TokenType to_match) {
-	return (this->_tokens.at(this->_current - 1)._token_type == to_match);
+	return (this->_tokens.at(this->_current - 1).type == to_match);
 }
 
 
 bool	Parser::match(Token token, TokenType to_match) {
-	return (token._token_type == to_match);
+	return (token.type == to_match);
 }
 
 
 bool	Parser::isAtEnd() {
-	return (peek()._token_type == END_OF_FILE);
+	return (peek().type == END_OF_FILE);
 }
 
 // -----------------------------------------------------------------
@@ -134,7 +134,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 	Token token = consume();
 
 	while (!match(token, CONTEXT_END)) {
-		switch (token._token_type) {
+		switch (token.type) {
 			case ROOT: parseRoot(directive_context); break;
 			case ERROR_PAGE: parseErrorPage(directive_context); break;
 			case CLIENT_MAX_BODY_SIZE:
@@ -165,7 +165,7 @@ void	Parser::parseRoot(SharedDirectives& directive_context) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	directive_context.root = token._lexeme;
+	directive_context.root = token.lexeme;
 	expect(SEMICOLON);
 }
 
@@ -184,7 +184,7 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 
 	while (!match(peek(), SEMICOLON)) {
 		char*	end = NULL;
-		long	error_code = std::strtol(token._lexeme.c_str(), &end, 10);
+		long	error_code = std::strtol(token.lexeme.c_str(), &end, 10);
 		if (*end != '\0') {
 			throw UnexpectedTokenException(currentToken(), this->_source);
 		} else if (!(error_code >= 300 && error_code <= 599)) {
@@ -200,7 +200,7 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 		throw InvalidNumberOfArgumentsException(error_page, this->_source);
 	}
 
-	String file = token._lexeme;
+	String file = token.lexeme;
 
 	std::vector<int>::iterator it = error_codes.begin();
 	std::vector<int>::iterator end = error_codes.end();
@@ -222,20 +222,20 @@ void	Parser::parseClientMaxBodySize(SharedDirectives& directive_context) {
 	}
 
 	// value is not a number
-	if (!std::isdigit(token._lexeme.c_str()[0])) {
+	if (!std::isdigit(token.lexeme.c_str()[0])) {
 		throw IncorrectValueException(token, this->_source);
 	}
 
 	// handle unit transition and unit check
 	char* end = NULL;
-	long body_size = std::strtol(token._lexeme.c_str(), &end, 10);
+	long body_size = std::strtol(token.lexeme.c_str(), &end, 10);
 	// no unit is provided
 	if (*end == '\0') {
 		directive_context.client_max_body_size = body_size;
 	}
 	// unit is provided
 	else {
-		String unit = token._lexeme.substr(token._lexeme.find_first_of(*end));
+		String unit = token.lexeme.substr(token.lexeme.find_first_of(*end));
 		if (body_size == 0 && (unit == "k" || unit == "K" || unit == "m" || unit == "M")) {
 			directive_context.client_max_body_size = 0;
 		} else if (unit == "k" || unit == "K") {
@@ -265,7 +265,7 @@ void	Parser::parseClientBodyTempPath(SharedDirectives& directive_context) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	directive_context.client_body_temp_path = token._lexeme;
+	directive_context.client_body_temp_path = token.lexeme;
 	expect(SEMICOLON);
 }
 
@@ -278,9 +278,9 @@ void	Parser::parseAutoindex(SharedDirectives& directive_context) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	if (token._lexeme == "on") {
+	if (token.lexeme == "on") {
 		directive_context.autoindex = true;
-	} else if (token._lexeme == "off") {
+	} else if (token.lexeme == "off") {
 		directive_context.autoindex = false;
 	} else {
 		throw InvalidValueExceptions(token, "autoindex", this->_source);
