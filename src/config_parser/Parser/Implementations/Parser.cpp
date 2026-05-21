@@ -96,7 +96,9 @@ void	Parser::expect(TokenType token_type) {
 
 			default: break;
 		}
-		throw ExpectedTokenException(previousToken(), missing_token, this->_source);
+		Token previous_token = previousToken();
+		previous_token.spaces++;
+		throw ExpectedTokenException(previous_token, missing_token, this->_source);
 	}
 }
 
