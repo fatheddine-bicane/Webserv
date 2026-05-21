@@ -21,11 +21,11 @@ Parser::Parser(std::vector<Token> tokens, String& source)
 // ---------------------------------------------------------
 
 Servers	Parser::scanTokens() {
-	SharedDirectives	http_context;
+	SharedDirectives	directive_context;
 	Servers				servers;
 
 	while (!isAtEnd()) {
-		scanToken(servers, http_context);
+		scanToken(servers, directive_context);
 	}
 
 	return servers;
@@ -38,7 +38,7 @@ Servers	Parser::scanTokens() {
 // INFO: utility functions
 // -----------------------------------------------------------------
 
-void	Parser::scanToken(Servers& servers, SharedDirectives& http_context) {
+void	Parser::scanToken(Servers& servers, SharedDirectives& directive_context) {
 	static bool is_events_parsed = false;
 	static bool is_http_parsed = false;
 
@@ -56,7 +56,7 @@ void	Parser::scanToken(Servers& servers, SharedDirectives& http_context) {
 			if (is_http_parsed) {
 				throw DuplicatedDirectiveException(currentToken(), this->_source);
 			}
-			parseHttp(servers, http_context);
+			parseHttp(servers, directive_context);
 			is_http_parsed = true;
 			break;
 
@@ -127,15 +127,15 @@ void	Parser::parseEvents() {
 	expect(CONTEXT_END);
 }
 
-void	Parser::parseHttp(Servers& servers, SharedDirectives& http_context) {
+void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 	(void) servers;
 	expect(CONTEXT_START);
 	Token token = consume();
 
 	while (!match(token, CONTEXT_END)) {
 		switch (token._token_type) {
-			case ROOT: parseRoot(http_context); break;
-			case ERROR_PAGE: parseErrorPage(http_context); break;
+			case ROOT: parseRoot(directive_context); break;
+			case ERROR_PAGE: parseErrorPage(directive_context); break;
 
 			default: break;
 		}
@@ -150,13 +150,13 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& http_context) {
 // INFO: simple directive parsers
 // -----------------------------------------------------------------
 
-void	Parser::parseRoot(SharedDirectives& http_context) {
+void	Parser::parseRoot(SharedDirectives& directive_context) {
 	Token token = consume();
-	http_context.root = token._lexeme;
+	directive_context.root = token._lexeme;
 	expect(SEMICOLON);
 }
 
-void	Parser::parseErrorPage(SharedDirectives& http_context) {
+void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 	Token error_page = currentToken();
 	std::vector<int> error_codes;
 	int argument_count = 0;
@@ -186,7 +186,7 @@ void	Parser::parseErrorPage(SharedDirectives& http_context) {
 	std::vector<int>::iterator end = error_codes.end();
 
 	for (; it != end; it++) {
-		http_context.error_page.insert(std::make_pair(*it, file));
+		directive_context.error_page.insert(std::make_pair(*it, file));
 	}
 
 	expect(SEMICOLON);
