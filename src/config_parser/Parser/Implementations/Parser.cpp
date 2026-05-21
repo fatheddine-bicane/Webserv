@@ -140,6 +140,9 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 			case CLIENT_MAX_BODY_SIZE:
 				parseClientMaxBodySize(directive_context);
 				break;
+			case CLIENT_BODY_TEMP_PATH:
+				parseClientBodyTempPath(directive_context);
+				break;
 
 			default: break;
 		}
@@ -239,6 +242,18 @@ void	Parser::parseClientMaxBodySize(SharedDirectives& directive_context) {
 		throw ValueTooLargeException(token, this->_source);
 	}
 
+	expect(SEMICOLON);
+}
+
+
+void	Parser::parseClientBodyTempPath(SharedDirectives& directive_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	directive_context.client_body_temp_path = token._lexeme;
 	expect(SEMICOLON);
 }
 
