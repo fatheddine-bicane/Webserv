@@ -146,6 +146,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 				parseClientBodyTempPath(directive_context);
 				break;
 			case AUTOINDEX: parseAutoindex(directive_context); break;
+			case INDEX: parseIndex(directive_context); break;
 
 			default: break;
 		}
@@ -291,5 +292,21 @@ void	Parser::parseAutoindex(SharedDirectives& directive_context) {
 	expect(SEMICOLON);
 }
 
+
+
+void	Parser::parseIndex(SharedDirectives& directive_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	while (match(peek(), VALUE)) {
+		directive_context.index.push_back(token.lexeme);
+		token = consume();
+	}
+
+	expect(SEMICOLON);
+}
 
 // -----------------------------------------------------------------
