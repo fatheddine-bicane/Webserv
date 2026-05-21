@@ -147,6 +147,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 				break;
 			case AUTOINDEX: parseAutoindex(directive_context); break;
 			case INDEX: parseIndex(directive_context); break;
+			case DAV_METHODS: parseDavMethods(directive_context); break;
 
 			default: break;
 		}
@@ -306,6 +307,53 @@ void	Parser::parseIndex(SharedDirectives& directive_context) {
 		token = consume();
 	}
 
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parseDavMethods(SharedDirectives& directive_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	while (match(token, VALUE)) {
+		// ignore case sensitivity
+		if (token.lexeme == "delete" || token.lexeme == "put") {
+			String& lexeme = token.lexeme;
+			std::transform(lexeme.begin(), lexeme.end(), lexeme.begin(), ::toupper);
+		}
+
+		if (token.lexeme == "DELETE" || token.lexeme == "PUT") {
+			// match nginx rejecting duplicates
+			std::set<String>& dav_methods = directive_context.dav_methods;
+			if (dav_methods.find(token.lexeme) != dav_methods.end()) {
+				throw DuplicatedValueException(token, this->_source);
+			}
+
+			dav_methods.insert(token.lexeme);
+
+		} else if (token.lexeme == "off") {
+			directive_context.dav_methods = std::set<String>();
+
+			while (match(peek(), VALUE)) {
+				consume();
+				continue;
+			}
+			goto expect_semicolon;
+		} else {
+			throw InvalidValueExceptions(token, "dav_methods", this->_source);
+		}
+
+		if (!match(peek(), VALUE)) {
+			goto expect_semicolon;
+		}
+		token = consume();
+	} // while match value
+
+expect_semicolon:
 	expect(SEMICOLON);
 }
 

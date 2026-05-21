@@ -3,6 +3,8 @@
 #include <exception>
 #include <sstream>
 #include <string>
+#include <algorithm>
+#include <set>
 #include "../../../Includes/colors.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
 
@@ -180,4 +182,23 @@ public:
 	}
 
 	~InvalidValueExceptions() throw() {}
+};
+
+
+
+class DuplicatedValueException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+
+	DuplicatedValueException(const Token& token, const String& source) {
+		this->_err = generateForematedError(token, "duplicate value", source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~DuplicatedValueException() throw() {}
 };
