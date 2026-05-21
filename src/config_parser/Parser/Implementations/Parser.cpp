@@ -182,7 +182,7 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	while (!match(peek(), SEMICOLON)) {
+	while (!match(peek(), SEMICOLON) && match(peek(), VALUE)) {
 		char*	end = NULL;
 		long	error_code = std::strtol(token.lexeme.c_str(), &end, 10);
 		if (*end != '\0') {
@@ -196,7 +196,7 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 		token = consume();
 	}
 
-	if (argument_count < 1) {
+	if (argument_count < 1 && !match(peek(), VALUE)) {
 		throw InvalidNumberOfArgumentsException(error_page, this->_source);
 	}
 
