@@ -156,6 +156,11 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 
 void	Parser::parseRoot(SharedDirectives& directive_context) {
 	Token token = consume();
+
+	if (match(token, SEMICOLON)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
 	directive_context.root = token._lexeme;
 	expect(SEMICOLON);
 }
