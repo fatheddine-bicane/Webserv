@@ -160,3 +160,26 @@ public:
 
 	~ValueTooLargeException() throw() {}
 };
+
+
+
+class InvalidValueExceptions : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	InvalidValueExceptions(Token& token, const String& directive, const String& source) {
+		String value = token._lexeme;
+		token._lexeme = directive;
+		String error_type = "invalid value '" + value + "' in directive";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~InvalidValueExceptions() throw() {}
+};

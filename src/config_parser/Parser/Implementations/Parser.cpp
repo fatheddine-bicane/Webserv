@@ -143,6 +143,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 			case CLIENT_BODY_TEMP_PATH:
 				parseClientBodyTempPath(directive_context);
 				break;
+			case AUTOINDEX: parseAutoindex(directive_context); break;
 
 			default: break;
 		}
@@ -265,6 +266,26 @@ void	Parser::parseClientBodyTempPath(SharedDirectives& directive_context) {
 	}
 
 	directive_context.client_body_temp_path = token._lexeme;
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parseAutoindex(SharedDirectives& directive_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	if (token._lexeme == "on") {
+		directive_context.autoindex = true;
+	} else if (token._lexeme == "off") {
+		directive_context.autoindex = false;
+	} else {
+		throw InvalidValueExceptions(token, "autoindex", this->_source);
+	}
+
 	expect(SEMICOLON);
 }
 
