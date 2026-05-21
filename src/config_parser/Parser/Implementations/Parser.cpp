@@ -215,6 +215,11 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 void	Parser::parseClientMaxBodySize(SharedDirectives& directive_context) {
 	Token token = consume();
 
+	// no value provided
+	if (match(token, SEMICOLON)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
 	// value is not a number
 	if (!std::isdigit(token._lexeme.c_str()[0])) {
 		throw IncorrectValueException(token, this->_source);
