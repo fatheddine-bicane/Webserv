@@ -176,7 +176,7 @@ void	Parser::parseErrorPage(SharedDirectives& http_context) {
 		token = consume();
 	}
 
-	if (argument_count < 2) {
+	if (argument_count < 1) {
 		throw InvalidNumberOfArgumentsException(error_page, this->_source);
 	}
 
