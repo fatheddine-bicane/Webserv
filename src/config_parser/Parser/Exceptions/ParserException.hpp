@@ -175,8 +175,6 @@ public:
 		this->_err = generateForematedError(token, error_type, source);
 	}
 
-
-
 	const char * what() const throw() {
 		return this->_err.c_str();
 	}
