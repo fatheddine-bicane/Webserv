@@ -175,6 +175,12 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 	int argument_count = 0;
 
 	Token token = consume();
+
+	// no value provided
+	if (match(token, SEMICOLON)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
 	while (!match(peek(), SEMICOLON)) {
 		char*	end = NULL;
 		long	error_code = std::strtol(token._lexeme.c_str(), &end, 10);
