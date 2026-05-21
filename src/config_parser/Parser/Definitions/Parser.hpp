@@ -56,5 +56,6 @@ private:
 private:
 	void	parseRoot(SharedDirectives& directive_context);
 	void	parseErrorPage(SharedDirectives& directive_context);
+	void	parseClientMaxBodySize(SharedDirectives& directive_context);
 
 };

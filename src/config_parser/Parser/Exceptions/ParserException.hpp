@@ -131,9 +131,32 @@ public:
 		this->_err = generateForematedError(token, "unexpected token", source);
 	}
 
+	UnexpectedTokenException(Token& token, const String& token_value,  const String& source) {
+		token._lexeme = token_value;
+		this->_err = generateForematedError(token, "unexpected token", source);
+	}
+
 	const char * what() const throw() {
 		return this->_err.c_str();
 	}
 
 	~UnexpectedTokenException() throw() {}
+};
+
+
+
+class ValueTooLargeException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	ValueTooLargeException(const Token& token, const String& source) {
+		this->_err = generateForematedError(token, "value too large", source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~ValueTooLargeException() throw() {}
 };

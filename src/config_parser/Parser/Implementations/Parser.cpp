@@ -127,6 +127,7 @@ void	Parser::parseEvents() {
 	expect(CONTEXT_END);
 }
 
+
 void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 	(void) servers;
 	expect(CONTEXT_START);
@@ -136,6 +137,9 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 		switch (token._token_type) {
 			case ROOT: parseRoot(directive_context); break;
 			case ERROR_PAGE: parseErrorPage(directive_context); break;
+			case CLIENT_MAX_BODY_SIZE:
+				parseClientMaxBodySize(directive_context);
+				break;
 
 			default: break;
 		}
@@ -155,6 +159,7 @@ void	Parser::parseRoot(SharedDirectives& directive_context) {
 	directive_context.root = token._lexeme;
 	expect(SEMICOLON);
 }
+
 
 void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 	Token error_page = currentToken();
@@ -191,5 +196,46 @@ void	Parser::parseErrorPage(SharedDirectives& directive_context) {
 
 	expect(SEMICOLON);
 }
+
+
+void	Parser::parseClientMaxBodySize(SharedDirectives& directive_context) {
+	Token token = consume();
+
+	// value is not a number
+	if (!std::isdigit(token._lexeme.c_str()[0])) {
+		throw IncorrectValueException(token, this->_source);
+	}
+
+	// handle unit transition and unit check
+	char* end = NULL;
+	long body_size = std::strtol(token._lexeme.c_str(), &end, 10);
+	// no unit is provided
+	if (*end == '\0') {
+		directive_context.client_max_body_size = body_size;
+	}
+	// unit is provided
+	else {
+		String unit = token._lexeme.substr(token._lexeme.find_first_of(*end));
+		if (body_size == 0 && (unit == "k" || unit == "K" || unit == "m" || unit == "M")) {
+			directive_context.client_max_body_size = 0;
+		} else if (unit == "k" || unit == "K") {
+			directive_context.client_max_body_size = body_size * 1024;
+		} else if (unit == "m" || unit == "M") {
+			directive_context.client_max_body_size = body_size * 1024 * 1024;
+		} else {
+			throw UnexpectedTokenException(token, unit, this->_source);
+		}
+	}
+
+	// check if value is larger than 100m
+	unsigned long max_allowed_size = 100 * 1024 * 1024;
+	if (directive_context.client_max_body_size > max_allowed_size
+		|| body_size == LONG_MAX) {
+		throw ValueTooLargeException(token, this->_source);
+	}
+
+	expect(SEMICOLON);
+}
+
 
 // -----------------------------------------------------------------
