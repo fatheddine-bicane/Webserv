@@ -148,6 +148,9 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 			case AUTOINDEX: parseAutoindex(directive_context); break;
 			case INDEX: parseIndex(directive_context); break;
 			case DAV_METHODS: parseDavMethods(directive_context); break;
+			case CREATE_FULL_PUT_PATH:
+				parserCreateFullPutPath(directive_context);
+				break;
 
 			default: break;
 		}
@@ -354,6 +357,26 @@ void	Parser::parseDavMethods(SharedDirectives& directive_context) {
 	} // while match value
 
 expect_semicolon:
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parserCreateFullPutPath(SharedDirectives& directive_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	if (token.lexeme == "on") {
+		directive_context.create_full_put_path = true;
+	} else if (token.lexeme == "off") {
+		directive_context.create_full_put_path = false;
+	} else {
+		throw InvalidValueExceptions(token, "autoindex", this->_source);
+	}
+
 	expect(SEMICOLON);
 }
 
