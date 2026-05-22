@@ -106,7 +106,11 @@ void	Scanner::identifier() {
 }
 
 void	Scanner::addToken(TokenType token_type) {
-	String lexeme = this->_source.substr(this->_start, this->_current - this->_start);
+	String lexeme = "END_OF_FILE";
+	if (token_type != END_OF_FILE) {
+		lexeme = this->_source.substr(this->_start, this->_current - this->_start);
+	}
+
 	addToken(token_type, lexeme);
 }
 
