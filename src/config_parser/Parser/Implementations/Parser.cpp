@@ -178,6 +178,10 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 				parserCreateFullPutPath(directive_context);
 				break;
 
+			// end of file reached without closing the context
+			case END_OF_FILE:
+				throw ExpectedTokenException(previousToken(), "}", this->_source);
+
 			default:
 				if (isDirective(token.type)) {
 					throw DirectiveNotAllowedHereException(token, this->_source);

@@ -72,7 +72,7 @@ private:
 	std::string	_err;
 
 public:
-	ExpectedTokenException(const Token& token, String& missing_token, String& source) {
+	ExpectedTokenException(const Token& token, const String& missing_token, String& source) {
 
 		String error_type = "expected token '" + missing_token + "' after";
 		this->_err = generateForematedError(token, error_type, source);
