@@ -35,6 +35,7 @@ Scanner::Scanner(String& source) :
 	this->_keywords.insert(std::make_pair("client_body_temp_path", CLIENT_BODY_TEMP_PATH));
 	this->_keywords.insert(std::make_pair("create_full_put_path",  CREATE_FULL_PUT_PATH));
 	this->_keywords.insert(std::make_pair("cgi_pass",              CGI_PASS));
+	this->_keywords.insert(std::make_pair("server_name",           SERVER_NAME));
 }
 
 std::vector<Token>	Scanner::scanTokens() {

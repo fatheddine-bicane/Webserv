@@ -136,6 +136,7 @@ bool	Parser::isDirective(TokenType token_type) {
 		case CLIENT_BODY_TEMP_PATH:
 		case CREATE_FULL_PUT_PATH:
 		case CGI_PASS:
+		case SERVER_NAME:
 			return true;
 
 		default:
