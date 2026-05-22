@@ -134,7 +134,9 @@ public:
 	}
 
 	UnexpectedTokenException(Token& token, const String& token_value,  const String& source) {
-		token.lexeme = token_value;
+		if (!token_value.empty()) {
+			token.lexeme = token_value;
+		}
 		this->_err = generateForematedError(token, "unexpected token", source);
 	}
 
@@ -201,4 +203,23 @@ public:
 	}
 
 	~DuplicatedValueException() throw() {}
+};
+
+
+
+class DirectiveNotAllowedHereException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	DirectiveNotAllowedHereException (const Token& token, const String& source) {
+		String error_type = "directive not allowed in this context";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~DirectiveNotAllowedHereException() throw() {}
 };

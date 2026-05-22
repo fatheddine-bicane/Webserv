@@ -117,6 +117,32 @@ bool	Parser::isAtEnd() {
 	return (peek().type == END_OF_FILE);
 }
 
+bool	Parser::isDirective(TokenType token_type) {
+	switch (token_type) {
+		case EVENTS:
+		case HTTP:
+		case SERVER:
+		case LOCATION:
+		case LIMIT_EXCEPT:
+		case LISTEN:
+		case ERROR_PAGE:
+		case ROOT:
+		case CLIENT_MAX_BODY_SIZE:
+		case AUTOINDEX:
+		case INDEX:
+		case ALIAS:
+		case RETURN:
+		case DAV_METHODS:
+		case CLIENT_BODY_TEMP_PATH:
+		case CREATE_FULL_PUT_PATH:
+		case CGI_PASS:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 // -----------------------------------------------------------------
 
 
@@ -152,7 +178,12 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 				parserCreateFullPutPath(directive_context);
 				break;
 
-			default: break;
+			default:
+				if (isDirective(token.type)) {
+					throw DirectiveNotAllowedHereException(token, this->_source);
+				} else {
+					throw UnexpectedTokenException(token, "", this->_source);
+				}
 		}
 		token = consume();
 	}

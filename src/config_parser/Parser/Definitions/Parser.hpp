@@ -44,6 +44,7 @@ private:
 	bool	match(TokenType to_match);
 	bool	match(Token token, TokenType to_match);
 	bool	isAtEnd();
+	bool	isDirective(TokenType token_type);
 
 
 // INFO: block directive parsers (context)
