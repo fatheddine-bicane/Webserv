@@ -64,5 +64,6 @@ private:
 	void	parseIndex(SharedDirectives& directive_context);
 	void	parseDavMethods(SharedDirectives& directive_context);
 	void	parserCreateFullPutPath(SharedDirectives& directive_context);
+	void	parseReturn(Server& server_context);
 
 };

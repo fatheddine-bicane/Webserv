@@ -228,6 +228,7 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 			case CREATE_FULL_PUT_PATH:
 				parserCreateFullPutPath(server_directive.shared_directives);
 				break;
+			case RETURN: parseReturn(server_directive); break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -467,4 +468,30 @@ void	Parser::parserCreateFullPutPath(SharedDirectives& directive_context) {
 	expect(SEMICOLON);
 }
 
+
+
+void	Parser::parseReturn(Server& server_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	char* end = NULL;
+	long error_value = std::strtol(token.lexeme.c_str(), &end, 10);
+	if (*end != '\0' || !(error_value >= 300 && error_value <= 599)) {
+		throw InvalidValueExceptions(token, "return", this->_source);
+	}
+
+	server_context.return_d.first = error_value;
+
+	token = consume();
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	server_context.return_d.second = token.lexeme;
+
+	expect(SEMICOLON);
+}
 // -----------------------------------------------------------------
