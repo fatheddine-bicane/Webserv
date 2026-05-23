@@ -178,6 +178,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 			case CREATE_FULL_PUT_PATH:
 				parserCreateFullPutPath(directive_context);
 				break;
+			case SERVER: parseServer(servers, directive_context); break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -192,6 +193,37 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 		}
 		token = consume();
 	}
+}
+
+
+
+void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) {
+	(void)servers;
+	(void)directive_context;
+	expect(CONTEXT_START);
+
+	Server server_directive;
+	server_directive.shared_directives = directive_context;
+
+	Token token = consume();
+
+	while (!match(token, CONTEXT_END)) {
+		switch (token.type) {
+
+			// end of file reached without closing the context
+			case END_OF_FILE:
+				throw ExpectedTokenException(previousToken(), "}", this->_source);
+
+			default:
+				if (isDirective(token.type)) {
+					throw DirectiveNotAllowedHereException(token, this->_source);
+				} else {
+					throw UnexpectedTokenException(token, "", this->_source);
+				}
+		}
+
+		token = consume();
+	} // while match CONTEXT_END
 }
 
 // -----------------------------------------------------------------
