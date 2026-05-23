@@ -209,6 +209,25 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 
 	while (!match(token, CONTEXT_END)) {
 		switch (token.type) {
+			case ROOT: parseRoot(server_directive.shared_directives); break;
+			case ERROR_PAGE:
+				parseErrorPage(server_directive.shared_directives);
+				break;
+			case CLIENT_MAX_BODY_SIZE:
+				parseClientMaxBodySize(server_directive.shared_directives);
+				break;
+			case CLIENT_BODY_TEMP_PATH:
+				parseClientBodyTempPath(server_directive.shared_directives);
+				break;
+			case AUTOINDEX: parseAutoindex(server_directive.shared_directives);
+				break;
+			case INDEX: parseIndex(server_directive.shared_directives); break;
+			case DAV_METHODS:
+				parseDavMethods(server_directive.shared_directives);
+				break;
+			case CREATE_FULL_PUT_PATH:
+				parserCreateFullPutPath(server_directive.shared_directives);
+				break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
