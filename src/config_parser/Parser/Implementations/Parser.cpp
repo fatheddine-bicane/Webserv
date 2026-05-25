@@ -8,9 +8,6 @@ Parser::Parser(std::vector<Token> tokens, String& source)
 	: _source(source) {
 	this->_current = 0;
 	this->_tokens = tokens;
-
-	// append to namless servers
-	this->_servers_count = 0;
 }
 
 // ---------------------------------------------------------
@@ -204,11 +201,17 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 
 	Server server_directive;
 	server_directive.shared_directives = directive_context;
+	String server_name;
+	bool server_name_parsed = false;
 
 	Token token = consume();
 
 	while (!match(token, CONTEXT_END)) {
 		switch (token.type) {
+			case SERVER_NAME:
+				parseServerName(server_name);
+				server_name_parsed = true;
+				break;
 			case ROOT: parseRoot(server_directive.shared_directives); break;
 			case ERROR_PAGE:
 				parseErrorPage(server_directive.shared_directives);
@@ -244,6 +247,12 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 
 		token = consume();
 	} // while match CONTEXT_END
+
+	if (server_name_parsed == true) {
+		servers.insert(std::make_pair(server_name, server_directive));
+	} else {
+		servers.insert(std::make_pair("default", server_directive));
+	}
 }
 
 // -----------------------------------------------------------------
@@ -465,6 +474,19 @@ void	Parser::parserCreateFullPutPath(SharedDirectives& directive_context) {
 		throw InvalidValueExceptions(token, "autoindex", this->_source);
 	}
 
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parseServerName(String& server_name) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	server_name = token.lexeme;
 	expect(SEMICOLON);
 }
 

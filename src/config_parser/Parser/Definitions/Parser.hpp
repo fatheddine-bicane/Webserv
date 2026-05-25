@@ -19,7 +19,6 @@ private:
 	String&				_source;
 	int					_current;
 	std::vector<Token>	_tokens;
-	int					_servers_count;
 
 
 // INFO: constructors
@@ -64,6 +63,7 @@ private:
 	void	parseIndex(SharedDirectives& directive_context);
 	void	parseDavMethods(SharedDirectives& directive_context);
 	void	parserCreateFullPutPath(SharedDirectives& directive_context);
+	void	parseServerName(String& server_name);
 	void	parseReturn(Server& server_context);
 
 };
