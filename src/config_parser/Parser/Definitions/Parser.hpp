@@ -44,6 +44,7 @@ private:
 	bool	match(Token token, TokenType to_match);
 	bool	isAtEnd();
 	bool	isDirective(TokenType token_type);
+	bool	isHttpMethod(const String& method);
 
 
 // INFO: block directive parsers (context)
@@ -65,5 +66,10 @@ private:
 	void	parserCreateFullPutPath(SharedDirectives& directive_context);
 	void	parseServerName(String& server_name);
 	void	parseReturn(Server& server_context);
+	void	parseReturn(Location& location_context);
+	void	parseAlias(Location& location_context);
+	void	parseLimitExcept(Location& location_context);
+	void	parseCgiPass(Location& location_context);
+	void	parseLocation(Server& server);
 
 };

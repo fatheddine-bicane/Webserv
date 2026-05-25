@@ -223,3 +223,22 @@ public:
 
 	~DirectiveNotAllowedHereException() throw() {}
 };
+
+
+
+class UnsupportedCgiScriptType : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	UnsupportedCgiScriptType(const Token& token, const String& source) {
+		String error_type = "unsupported cgi script format";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~UnsupportedCgiScriptType() throw() {}
+};

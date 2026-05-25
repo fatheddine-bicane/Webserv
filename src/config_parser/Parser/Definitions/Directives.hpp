@@ -46,6 +46,7 @@ public:
 class Location
 {
 public:
+	String									path;
 	SharedDirectives						shared_directives;
 	String									alias;
 	std::set<String>						limit_except;

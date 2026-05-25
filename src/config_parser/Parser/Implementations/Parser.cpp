@@ -141,6 +141,15 @@ bool	Parser::isDirective(TokenType token_type) {
 	}
 }
 
+
+
+bool	Parser::isHttpMethod(const String& method) {
+	return (method == "GET"
+		 || method == "POST"
+		 || method == "DELETE"
+		 || method == "PUT");
+}
+
 // -----------------------------------------------------------------
 
 
@@ -195,8 +204,6 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 
 
 void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) {
-	(void)servers;
-	(void)directive_context;
 	expect(CONTEXT_START);
 
 	Server server_directive;
@@ -232,6 +239,7 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 				parserCreateFullPutPath(server_directive.shared_directives);
 				break;
 			case RETURN: parseReturn(server_directive); break;
+			case LOCATION: parseLocation(server_directive); break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -516,4 +524,177 @@ void	Parser::parseReturn(Server& server_context) {
 
 	expect(SEMICOLON);
 }
+
+
+
+void	Parser::parseReturn(Location& location_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	char* end = NULL;
+	long error_value = std::strtol(token.lexeme.c_str(), &end, 10);
+	if (*end != '\0' || !(error_value >= 300 && error_value <= 599)) {
+		throw InvalidValueExceptions(token, "return", this->_source);
+	}
+
+	location_context.return_d.first = error_value;
+
+	token = consume();
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	location_context.return_d.second = token.lexeme;
+
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parseAlias(Location& location_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	location_context.alias = token.lexeme;
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parseLimitExcept(Location& location_context) {
+	std::set<String>& limit_except = location_context.limit_except;
+	Token token = consume();
+
+	if (!match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	while (match(token, VALUE)) {
+		if (!isHttpMethod(token.lexeme)) {
+			throw InvalidValueExceptions(token, "limit_except", this->_source);
+		}
+
+		if (limit_except.find(token.lexeme) != limit_except.end()) {
+			throw DuplicatedValueException(token, this->_source);
+		}
+
+		location_context.limit_except.insert(token.lexeme);
+		token = consume();
+	}
+
+	if (!match(token, CONTEXT_START)) {
+		throw UnexpectedTokenException(token, this->_source);
+	}
+
+	token = consume();
+	if (token.lexeme != "deny") {
+		throw UnexpectedTokenException(token, this->_source);
+	}
+
+	token = consume();
+	if (token.lexeme != "all") {
+		throw UnexpectedTokenException(token, this->_source);
+	}
+
+	expect(SEMICOLON);
+	expect(CONTEXT_END);
+}
+
+
+
+void	Parser::parseCgiPass(Location& location_context) {
+	Token token = consume();
+
+	if (match(token, SEMICOLON) || !match(token, VALUE) || !match(peek(), VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+
+	if (token.lexeme == ".py" || token.lexeme == ".js") {
+		String extention = token.lexeme;
+
+
+		std::vector<std::pair<String, String> >::iterator it;
+		std::vector<std::pair<String, String> >::iterator end;
+		it = location_context.cgi_pass.begin();
+		end = location_context.cgi_pass.end();
+		for (; it != end; it++) {
+			if (it->first == extention) {
+				throw DuplicatedValueException(token, this->_source);
+			}
+		}
+
+		token = consume();
+		location_context.cgi_pass.push_back(std::make_pair(extention, token.lexeme));
+	} else {
+		throw UnsupportedCgiScriptType(token, this->_source);
+	}
+
+	expect(SEMICOLON);
+}
+
+
+
+void	Parser::parseLocation(Server& server) {
+	Location location_directive;
+	location_directive.shared_directives = server.shared_directives;
+
+	Token token = consume();
+	if (!match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
+	}
+	location_directive.path = token.lexeme;
+
+	expect(CONTEXT_START);
+
+	token = consume();
+	while (!match(token, CONTEXT_END)) {
+		switch (token.type) {
+			case ROOT: parseRoot(location_directive.shared_directives); break;
+			case ERROR_PAGE:
+				parseErrorPage(location_directive.shared_directives);
+				break;
+			case CLIENT_MAX_BODY_SIZE:
+				parseClientMaxBodySize(location_directive.shared_directives);
+				break;
+			case CLIENT_BODY_TEMP_PATH:
+				parseClientBodyTempPath(location_directive.shared_directives);
+				break;
+			case AUTOINDEX: parseAutoindex(location_directive.shared_directives);
+				break;
+			case INDEX: parseIndex(location_directive.shared_directives); break;
+			case DAV_METHODS:
+				parseDavMethods(location_directive.shared_directives);
+				break;
+			case CREATE_FULL_PUT_PATH:
+				parserCreateFullPutPath(location_directive.shared_directives);
+				break;
+			case RETURN: parseReturn(location_directive); break;
+			case ALIAS: parseAlias(location_directive); break;
+			case LIMIT_EXCEPT: parseLimitExcept(location_directive); break;
+			case CGI_PASS: parseCgiPass(location_directive); break;
+
+			// end of file reached without closing the context
+			case END_OF_FILE:
+				throw ExpectedTokenException(previousToken(), "}", this->_source);
+
+			default:
+				if (isDirective(token.type)) {
+					throw DirectiveNotAllowedHereException(token, this->_source);
+				} else {
+					throw UnexpectedTokenException(token, "", this->_source);
+				}
+		}
+
+		token = consume();
+	} // while match CONTEXT_END
+
+	server.locations.push_back(location_directive);
+}
+
 // -----------------------------------------------------------------
