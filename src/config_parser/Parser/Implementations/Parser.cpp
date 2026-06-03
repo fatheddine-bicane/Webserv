@@ -167,8 +167,13 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 	(void) servers;
 	expect(CONTEXT_START);
 	Token token = consume();
+	bool server_block_appeard = false;
 
 	while (!match(token, CONTEXT_END)) {
+		if (server_block_appeard && !match(token, LOCATION)) {
+			throw BlockDirectiveViolationException(token, this->_source);
+		}
+
 		switch (token.type) {
 			case ROOT: parseRoot(directive_context); break;
 			case ERROR_PAGE: parseErrorPage(directive_context); break;
@@ -184,7 +189,10 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 			case CREATE_FULL_PUT_PATH:
 				parserCreateFullPutPath(directive_context);
 				break;
-			case SERVER: parseServer(servers, directive_context); break;
+			case SERVER:
+				server_block_appeard = true;
+				parseServer(servers, directive_context);
+				break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -210,10 +218,15 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 	server_directive.shared_directives = directive_context;
 	String server_name;
 	bool server_name_parsed = false;
+	bool location_block_appered = false;
 
 	Token token = consume();
 
 	while (!match(token, CONTEXT_END)) {
+		if (location_block_appered && !match(token, LOCATION)) {
+			throw BlockDirectiveViolationException(token, this->_source);
+		}
+
 		switch (token.type) {
 			case SERVER_NAME:
 				parseServerName(server_name);
@@ -239,7 +252,10 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 				parserCreateFullPutPath(server_directive.shared_directives);
 				break;
 			case RETURN: parseReturn(server_directive); break;
-			case LOCATION: parseLocation(server_directive); break;
+			case LOCATION:
+				location_block_appered = true;
+				parseLocation(server_directive);
+				break;
 			case LISTEN: parseListen(); break;
 
 			// end of file reached without closing the context

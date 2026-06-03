@@ -303,3 +303,20 @@ public:
 
 	~InvalidIpAddressValueException() throw() {}
 };
+
+
+
+class BlockDirectiveViolationException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+
+	BlockDirectiveViolationException(const Token& token, const String& source) {
+		String error_type = "simple directives not allowed once a block directive appears in the context";
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+};

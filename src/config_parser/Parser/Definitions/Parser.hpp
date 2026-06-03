@@ -19,6 +19,8 @@ private:
 	String&				_source;
 	int					_current;
 	std::vector<Token>	_tokens;
+	bool				_server_block_apeared;
+	bool				_location_block_apeared;
 	std::vector<std::pair<String, String> > _addresses;
 
 
