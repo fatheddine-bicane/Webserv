@@ -240,6 +240,7 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 				break;
 			case RETURN: parseReturn(server_directive); break;
 			case LOCATION: parseLocation(server_directive); break;
+			case LISTEN: parseListen(); break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -695,6 +696,98 @@ void	Parser::parseLocation(Server& server) {
 	} // while match CONTEXT_END
 
 	server.locations.push_back(location_directive);
+}
+
+
+
+void	Parser::parseIp(const String& ip) {
+	std::stringstream ss(ip);
+	Token token = currentToken();
+
+	for (int i = 0; i < 5; i++) {
+		String octet_str;
+		std::getline(ss, octet_str, '.');
+		if (i == 4 ) {
+			if (!octet_str.empty()) {
+				throw InvalidIpAddressValueException(token, ip, this->_source);
+			} else {
+				break;
+			}
+		} else if (octet_str.empty()) {
+			throw InvalidIpAddressValueException(token, ip, this->_source);
+		}
+
+		char* end = NULL;
+		long octect_value = std::strtol(octet_str.c_str(), &end, 10);
+		if (*end != '\0') {
+			throw InvalidIpAddressValueException(token, ip, this->_source);
+		}
+
+		if (!(octect_value >= 0 && octect_value <= 255)) {
+			throw InvalidIpAddressValueException(token, ip, this->_source);
+		}
+	}
+}
+
+
+
+void	Parser::parseService(const String& service) {
+	Token token = currentToken();
+
+	char* end = NULL;
+	long service_value = strtol(service.c_str(), &end, 10);
+	if (*end != '\0') {
+		throw InvalidPortNumberException(token, service,
+								   INVALID_PORT_VALUE, this->_source);
+	}
+	if (service_value >= 0 && service_value <= 1023) {
+		throw InvalidPortNumberException(token, service,
+								   PRIVILEGED_PORT, this->_source);
+	} else if (service_value < 0 || service_value > 65535) {
+		throw InvalidPortNumberException(token, service,
+								   INVALID_PORT_VALUE, this->_source);
+	}
+}
+
+
+
+void	Parser::parseListen() {
+	Token token = consume();
+
+	if (!match(token, VALUE)) {
+		throw InvalidNumberOfArgumentsException(token, this->_source);
+	}
+
+	String ip;
+	String service;
+	size_t pos = token.lexeme.find(':');
+	if (pos != String::npos) {
+		ip = token.lexeme.substr(0, pos);
+		service = token.lexeme.substr(pos + 1);
+	} else if (token.lexeme.find('.') != String::npos) {
+		ip = token.lexeme;
+		service = "8080";
+	} else {
+		ip = "0.0.0.0";
+		service = token.lexeme;
+	}
+
+	parseIp(ip);
+	parseService(service);
+
+	std::pair<String, String> address = std::make_pair(ip, service);
+
+	std::vector<std::pair<String, String> >::iterator begin;
+	std::vector<std::pair<String, String> >::iterator last;
+	std::vector<std::pair<String, String> >::iterator it;
+	begin = this->_addresses.begin();
+	last = this->_addresses.end();
+	it = std::find(begin, last, address);
+	if (it == last) {
+		this->_addresses.push_back(std::make_pair(ip, service));
+	}
+
+	expect(SEMICOLON);
 }
 
 // -----------------------------------------------------------------

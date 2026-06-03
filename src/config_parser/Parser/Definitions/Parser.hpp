@@ -19,6 +19,7 @@ private:
 	String&				_source;
 	int					_current;
 	std::vector<Token>	_tokens;
+	std::vector<std::pair<String, String> > _addresses;
 
 
 // INFO: constructors
@@ -71,5 +72,8 @@ private:
 	void	parseLimitExcept(Location& location_context);
 	void	parseCgiPass(Location& location_context);
 	void	parseLocation(Server& server);
+	void	parseIp(const String& ip);
+	void	parseService(const String& port);
+	void	parseListen();
 
 };

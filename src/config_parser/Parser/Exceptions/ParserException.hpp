@@ -11,6 +11,12 @@
 typedef std::string String;
 
 
+enum Port_error{
+	PRIVILEGED_PORT, INVALID_PORT_VALUE
+};
+
+
+
 class ParserException : public std::exception {
 protected:
 	std::string	generateForematedError(const Token& token,
@@ -241,4 +247,59 @@ public:
 	}
 
 	~UnsupportedCgiScriptType() throw() {}
+};
+
+
+
+class InvalidPortNumberException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	InvalidPortNumberException(Token& token,
+							   const String& port_value,
+							   Port_error port_error,
+							   const String& source) {
+		String error_type;
+		std::stringstream ss;
+		if (port_error == PRIVILEGED_PORT) {
+			error_type = "attempted connection to a privileged port: '" + port_value
+			+ "' in directive";
+		} else if (INVALID_PORT_VALUE){
+			error_type = "invalid port value: '" + port_value
+			   + "'. Port value must be a number in range: (1024 - 65535). In directive";
+		}
+		token.lexeme = "listen";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~InvalidPortNumberException() throw() {}
+
+};
+
+
+
+class InvalidIpAddressValueException : public ParserException {
+private:
+	std::string	_err;
+
+public:
+	InvalidIpAddressValueException(Token& token,
+								const String& address,
+								const String& source) {
+		String error_type = "invalid ip address value: " + address + " in directive";
+		token.lexeme = "listen";
+		this->_err = generateForematedError(token, error_type, source);
+	}
+
+
+	const char * what() const throw() {
+		return this->_err.c_str();
+	}
+
+	~InvalidIpAddressValueException() throw() {}
 };
