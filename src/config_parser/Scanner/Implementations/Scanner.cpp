@@ -1,16 +1,16 @@
 #include "../Definitions/Scanner.hpp"
-#include <algorithm>
-#include <cctype>
-#include <cstdio>
-#include <iostream>
-#include <map>
-#include <sstream>
-#include <string>
-#include <vector>
 
 
-Scanner::Scanner(String& source) :
-	_source(source) {
+Scanner::Scanner(const String& path) {
+	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+	if (!file.is_open()) {
+		throw std::runtime_error("Could not open file: " + path);
+	}
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	this->source = new String(buffer.str());
+	file.close();
+
 	this->_start = 0;
 	this->_current = 0;
 	this->_line = 1;
@@ -36,6 +36,10 @@ Scanner::Scanner(String& source) :
 	this->_keywords.insert(std::make_pair("create_full_put_path",  CREATE_FULL_PUT_PATH));
 	this->_keywords.insert(std::make_pair("cgi_pass",              CGI_PASS));
 	this->_keywords.insert(std::make_pair("server_name",           SERVER_NAME));
+}
+
+Scanner::~Scanner() {
+	delete source;
 }
 
 std::vector<Token>	Scanner::scanTokens() {
@@ -93,7 +97,7 @@ void	Scanner::identifier() {
 		consume();
 	}
 
-	String text = this->_source.substr(this->_start, this->_current - this->_start);
+	String text = this->source->substr(this->_start, this->_current - this->_start);
 
 	std::map<String, TokenType>::iterator keyword;
 	keyword = this->_keywords.find(text);
@@ -108,7 +112,7 @@ void	Scanner::identifier() {
 void	Scanner::addToken(TokenType token_type) {
 	String lexeme = "END_OF_FILE";
 	if (token_type != END_OF_FILE) {
-		lexeme = this->_source.substr(this->_start, this->_current - this->_start);
+		lexeme = this->source->substr(this->_start, this->_current - this->_start);
 	}
 
 	addToken(token_type, lexeme);
@@ -127,11 +131,11 @@ String	Scanner::generateErrorString() {
 	ss << RED << "Error:" << this->_line << ":"
 	   << this->_spaces + this->_tabs*4 << ": "
 	   << RESET << "Unexpected character: '"
-	   <<  this->_source.at(this->_current - 1)
+	   <<  this->source->at(this->_current - 1)
 	   << "'" << '\n';
 
-	int end_of_line = this->_source.find('\n', this->_line_start);
-	String line = this->_source.substr(this->_line_start, end_of_line - this->_line_start);
+	int end_of_line = this->source->find('\n', this->_line_start);
+	String line = this->source->substr(this->_line_start, end_of_line - this->_line_start);
 	ss << line << '\n';
 
 	int count = 0;
@@ -156,7 +160,7 @@ bool	Scanner::isValidChar(char c) {
 }
 
 char	Scanner::consume() {
-	char c = this->_source.at(this->_current++);
+	char c = this->source->at(this->_current++);
 
 	c == '\t' ? this->_tabs++ : this->_spaces++;
 
@@ -165,9 +169,9 @@ char	Scanner::consume() {
 
 char	Scanner::peek() {
 	if (isAtEnd()) return '\0';
-	return (this->_source.at(this->_current));
+	return (this->source->at(this->_current));
 }
 
 bool	Scanner::isAtEnd() {
-	return (this->_current >= static_cast<int>(this->_source.length()));
+	return (this->_current >= static_cast<int>(this->source->length()));
 }

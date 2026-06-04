@@ -1,8 +1,16 @@
 #pragma once
 
+#include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <iostream>
+#include <map>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <map>
+#include <fstream>
+#include <stdexcept>
+
 #include "./TokenType.hpp"
 #include "./Token.hpp"
 #include "../Exceptions/UnexpectedCharacterException.hpp"
@@ -13,7 +21,6 @@ typedef std::string String;
 
 class Scanner {
 private:
-	String&	_source;
 	int		_start;
 	int		_current;
 	int		_line;
@@ -24,8 +31,12 @@ private:
 	std::vector<Token> _tokens;
 
 public:
-	Scanner(String& source);
+	String*	source;
+
+public:
+	Scanner(const String& path);
 	std::vector<Token>	scanTokens();
+	~Scanner();
 
 private:
 	void	scanToken();
