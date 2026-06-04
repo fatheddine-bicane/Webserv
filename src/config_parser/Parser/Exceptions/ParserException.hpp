@@ -314,9 +314,13 @@ public:
 
 	BlockDirectiveViolationException(const Token& token, const String& source) {
 		String error_type = "simple directives not allowed once a block directive appears in the context";
+
+		this->_err = generateForematedError(token, error_type, source);
 	}
 
 	const char * what() const throw() {
 		return this->_err.c_str();
 	}
+
+	~BlockDirectiveViolationException() throw() {}
 };
