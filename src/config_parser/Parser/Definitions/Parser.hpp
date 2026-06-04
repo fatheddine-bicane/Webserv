@@ -20,6 +20,7 @@ private:
 	int					_current;
 	std::vector<Token>	_tokens;
 	std::vector<std::pair<String, String> > _addresses;
+	Servers				_servers;
 
 
 // INFO: constructors
@@ -29,12 +30,13 @@ public:
 
 // INFO: API
 public:
-	Servers	scanTokens();
+	void	scanTokens();
+	Servers& getServers();
 
 
 // INFO: utility functions
 private:
-	void	scanToken(Servers& servers, SharedDirectives& directive_context);
+	void	scanToken(SharedDirectives& directive_context);
 
 	Token	consume();
 	Token	currentToken();
@@ -51,8 +53,8 @@ private:
 // INFO: block directive parsers (context)
 private:
 	void	parseEvents();
-	void	parseHttp(Servers& servers, SharedDirectives& directive_context);
-	void	parseServer(Servers& Servers, SharedDirectives& directive_context);
+	void	parseHttp(SharedDirectives& directive_context);
+	void	parseServer(SharedDirectives& directive_context);
 
 
 // INFO: simple directive parsers

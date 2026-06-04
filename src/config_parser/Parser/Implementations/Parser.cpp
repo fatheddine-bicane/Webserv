@@ -17,15 +17,17 @@ Parser::Parser(std::vector<Token> tokens, String& source)
 // INFO: API
 // ---------------------------------------------------------
 
-Servers	Parser::scanTokens() {
+void	Parser::scanTokens() {
 	SharedDirectives	directive_context;
-	Servers				servers;
 
 	while (!isAtEnd()) {
-		scanToken(servers, directive_context);
+		scanToken(directive_context);
 	}
+}
 
-	return servers;
+
+Servers&	Parser::getServers() {
+	return this->_servers;
 }
 
 // ---------------------------------------------------------
@@ -35,7 +37,7 @@ Servers	Parser::scanTokens() {
 // INFO: utility functions
 // -----------------------------------------------------------------
 
-void	Parser::scanToken(Servers& servers, SharedDirectives& directive_context) {
+void	Parser::scanToken(SharedDirectives& directive_context) {
 	static bool is_events_parsed = false;
 	static bool is_http_parsed = false;
 
@@ -53,7 +55,7 @@ void	Parser::scanToken(Servers& servers, SharedDirectives& directive_context) {
 			if (is_http_parsed) {
 				throw DuplicatedDirectiveException(currentToken(), this->_source);
 			}
-			parseHttp(servers, directive_context);
+			parseHttp(directive_context);
 			is_http_parsed = true;
 			break;
 
@@ -163,8 +165,7 @@ void	Parser::parseEvents() {
 }
 
 
-void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
-	(void) servers;
+void	Parser::parseHttp(SharedDirectives& directive_context) {
 	expect(CONTEXT_START);
 	Token token = consume();
 	bool server_block_appeard = false;
@@ -191,7 +192,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 				break;
 			case SERVER:
 				server_block_appeard = true;
-				parseServer(servers, directive_context);
+				parseServer(directive_context);
 				break;
 
 			// end of file reached without closing the context
@@ -211,7 +212,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 
 
 
-void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) {
+void	Parser::parseServer(SharedDirectives& directive_context) {
 	expect(CONTEXT_START);
 
 	Server server_directive;
@@ -275,7 +276,7 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 	} // while match CONTEXT_END
 
 	if (server_name_parsed == true) {
-		servers.insert(std::make_pair(server_name, server_directive));
+		this->_servers.insert(std::make_pair(server_name, server_directive));
 	} else {
 		throw ServerNameMissingException(server_token, this->_source);
 	}
