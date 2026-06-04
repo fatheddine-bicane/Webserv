@@ -18,10 +18,9 @@ Parser::Parser(std::vector<Token> tokens, String& source)
 // ---------------------------------------------------------
 
 void	Parser::scanTokens() {
-	SharedDirectives	directive_context;
 
 	while (!isAtEnd()) {
-		scanToken(directive_context);
+		scanToken();
 	}
 }
 
@@ -42,7 +41,7 @@ std::vector<std::pair<String, String> >& Parser::getAddresses() {
 // INFO: utility functions
 // -----------------------------------------------------------------
 
-void	Parser::scanToken(SharedDirectives& directive_context) {
+void	Parser::scanToken() {
 	static bool is_events_parsed = false;
 	static bool is_http_parsed = false;
 
@@ -60,7 +59,7 @@ void	Parser::scanToken(SharedDirectives& directive_context) {
 			if (is_http_parsed) {
 				throw DuplicatedDirectiveException(currentToken(), this->_source);
 			}
-			parseHttp(directive_context);
+			parseHttp();
 			is_http_parsed = true;
 			break;
 
@@ -170,7 +169,8 @@ void	Parser::parseEvents() {
 }
 
 
-void	Parser::parseHttp(SharedDirectives& directive_context) {
+void	Parser::parseHttp() {
+	SharedDirectives directive_context;
 	expect(CONTEXT_START);
 	Token token = consume();
 	bool server_block_appeard = false;

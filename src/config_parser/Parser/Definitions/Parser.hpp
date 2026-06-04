@@ -38,7 +38,7 @@ public:
 
 // INFO: utility functions
 private:
-	void	scanToken(SharedDirectives& directive_context);
+	void	scanToken();
 
 	Token	consume();
 	Token	currentToken();
@@ -55,7 +55,7 @@ private:
 // INFO: block directive parsers (context)
 private:
 	void	parseEvents();
-	void	parseHttp(SharedDirectives& directive_context);
+	void	parseHttp();
 	void	parseServer(SharedDirectives& directive_context);
 
 
