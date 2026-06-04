@@ -269,7 +269,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 			case CREATE_FULL_PUT_PATH:
 				parserCreateFullPutPath(server_directive.shared_directives);
 				break;
-			case RETURN: parseReturn(server_directive); break;
+			case RETURN: parseReturn(server_directive.return_d); break;
 			case LOCATION:
 				location_block_appered = true;
 				parseLocation(server_directive);
@@ -535,7 +535,7 @@ void	Parser::parseServerName(String& server_name) {
 
 
 
-void	Parser::parseReturn(Server& server_context) {
+void	Parser::parseReturn(std::pair<int, String>& return_d) {
 	Token token = consume();
 
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
@@ -548,41 +548,14 @@ void	Parser::parseReturn(Server& server_context) {
 		throw InvalidValueExceptions(token, "return", this->_source);
 	}
 
-	server_context.return_d.first = error_value;
+	return_d.first = error_value;
 
 	token = consume();
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	server_context.return_d.second = token.lexeme;
-
-	expect(SEMICOLON);
-}
-
-
-
-void	Parser::parseReturn(Location& location_context) {
-	Token token = consume();
-
-	if (match(token, SEMICOLON) || !match(token, VALUE)) {
-		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
-	}
-
-	char* end = NULL;
-	long error_value = std::strtol(token.lexeme.c_str(), &end, 10);
-	if (*end != '\0' || !(error_value >= 300 && error_value <= 599)) {
-		throw InvalidValueExceptions(token, "return", this->_source);
-	}
-
-	location_context.return_d.first = error_value;
-
-	token = consume();
-	if (match(token, SEMICOLON) || !match(token, VALUE)) {
-		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
-	}
-
-	location_context.return_d.second = token.lexeme;
+	return_d.second = token.lexeme;
 
 	expect(SEMICOLON);
 }
@@ -709,7 +682,7 @@ void	Parser::parseLocation(Server& server) {
 			case CREATE_FULL_PUT_PATH:
 				parserCreateFullPutPath(location_directive.shared_directives);
 				break;
-			case RETURN: parseReturn(location_directive); break;
+			case RETURN: parseReturn(location_directive.return_d); break;
 			case ALIAS: parseAlias(location_directive); break;
 			case LIMIT_EXCEPT: parseLimitExcept(location_directive); break;
 			case CGI_PASS: parseCgiPass(location_directive); break;
