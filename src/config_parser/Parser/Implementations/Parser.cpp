@@ -218,6 +218,7 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 	server_directive.shared_directives = directive_context;
 	String server_name;
 	bool server_name_parsed = false;
+	Token server_token = previousToken();
 	bool location_block_appered = false;
 
 	Token token = consume();
@@ -276,7 +277,7 @@ void	Parser::parseServer(Servers& servers, SharedDirectives& directive_context) 
 	if (server_name_parsed == true) {
 		servers.insert(std::make_pair(server_name, server_directive));
 	} else {
-		servers.insert(std::make_pair("default", server_directive));
+		throw ServerNameMissingException(server_token, this->_source);
 	}
 }
 
