@@ -170,7 +170,7 @@ void	Parser::parseHttp(Servers& servers, SharedDirectives& directive_context) {
 	bool server_block_appeard = false;
 
 	while (!match(token, CONTEXT_END)) {
-		if (server_block_appeard && !match(token, LOCATION)) {
+		if (server_block_appeard && !match(token, SERVER)) {
 			throw BlockDirectiveViolationException(token, this->_source);
 		}
 
