@@ -42,29 +42,32 @@ std::vector<std::pair<String, String> >& Parser::getAddresses() {
 // -----------------------------------------------------------------
 
 void	Parser::scanToken() {
-	static bool is_events_parsed = false;
-	static bool is_http_parsed = false;
-
 	Token token = consume();
 
 	switch (token.type) {
 		case EVENTS:
-			if (is_events_parsed) {
-				throw DuplicatedDirectiveException(currentToken(), this->_source);
-			}
 			parseEvents();
-			is_events_parsed = true;
+
+			if (match(peek(), EVENTS)) {
+				throw DuplicatedDirectiveException(peek(), this->_source);
+			} else if (!match(peek(), HTTP)) {
+				throw ExpectedTokenException(token, "http", this->_source);
+			}
 			break;
 		case HTTP:
-			if (is_http_parsed) {
-				throw DuplicatedDirectiveException(currentToken(), this->_source);
-			}
 			parseHttp();
-			is_http_parsed = true;
+
+			if (match(peek(), HTTP)) {
+				throw DuplicatedDirectiveException(peek(), this->_source);
+			} else if (!match(peek(), END_OF_FILE)) {
+				throw ExpectedTokenException(token, "end_of_file", this->_source);
+			}
+
 			break;
 
 
-		default: break;
+		default:
+			throw UnexpectedTokenException(token, this->_source);
 	}
 }
 
