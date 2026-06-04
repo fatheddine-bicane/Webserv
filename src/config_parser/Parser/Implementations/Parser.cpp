@@ -7,16 +7,7 @@
 Parser::Parser(std::vector<Token> tokens, String& source) 
 	: _source(source) {
 	this->_current = 0;
-	this->_tokens = new std::vector<Token>(tokens);
-	this->_servers = new Servers;
-	this->_addresses = new Adrresses;
-
-}
-
-
-Parser::~Parser() {
-	delete this->_servers;
-	delete this->_addresses;
+	this->_tokens = tokens;
 }
 
 // ---------------------------------------------------------
@@ -27,27 +18,20 @@ Parser::~Parser() {
 // ---------------------------------------------------------
 
 void	Parser::scanTokens() {
-	try {
-		while (!isAtEnd()) {
-			scanToken();
-		}
 
-		delete this->_tokens;
-
-	} catch (std::exception& e) {
-		delete this->_tokens;
-		throw;
+	while (!isAtEnd()) {
+		scanToken();
 	}
 }
 
 
 Servers&	Parser::getServers() {
-	return *this->_servers;
+	return this->_servers;
 }
 
 
 std::vector<std::pair<String, String> >& Parser::getAddresses() {
-	return *this->_addresses;
+	return this->_addresses;
 }
 
 // ---------------------------------------------------------
@@ -89,22 +73,22 @@ void	Parser::scanToken() {
 
 
 Token	Parser::consume() {
-	return (this->_tokens->at(this->_current++));
+	return (this->_tokens.at(this->_current++));
 }
 
 
 Token	Parser::currentToken() {
-	return (this->_tokens->at(this->_current - 1));
+	return (this->_tokens.at(this->_current - 1));
 }
 
 
 Token	Parser::previousToken() {
-	return (this->_tokens->at(this->_current - 2));
+	return (this->_tokens.at(this->_current - 2));
 }
 
 
 Token	Parser::peek() {
-	return (this->_tokens->at(this->_current));
+	return (this->_tokens.at(this->_current));
 }
 
 
@@ -126,7 +110,7 @@ void	Parser::expect(TokenType token_type) {
 
 
 bool	Parser::match(TokenType to_match) {
-	return (this->_tokens->at(this->_current - 1).type == to_match);
+	return (this->_tokens.at(this->_current - 1).type == to_match);
 }
 
 
@@ -308,7 +292,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 	} // while match CONTEXT_END
 
 	if (server_name_parsed == true) {
-		this->_servers->insert(std::make_pair(server_name, server_directive));
+		this->_servers.insert(std::make_pair(server_name, server_directive));
 	} else {
 		throw ServerNameMissingException(server_token, this->_source);
 	}
@@ -803,11 +787,11 @@ void	Parser::parseListen() {
 	std::vector<std::pair<String, String> >::iterator begin;
 	std::vector<std::pair<String, String> >::iterator last;
 	std::vector<std::pair<String, String> >::iterator it;
-	begin = this->_addresses->begin();
-	last = this->_addresses->end();
+	begin = this->_addresses.begin();
+	last = this->_addresses.end();
 	it = std::find(begin, last, address);
 	if (it == last) {
-		this->_addresses->push_back(std::make_pair(ip, service));
+		this->_addresses.push_back(std::make_pair(ip, service));
 	}
 
 	expect(SEMICOLON);

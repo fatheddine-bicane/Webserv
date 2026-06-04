@@ -13,22 +13,20 @@
 
 typedef std::string String;
 typedef std::map<String, Server>	Servers;
-typedef std::vector<std::pair<String, String> > Adrresses;
 
 
 class Parser {
 private:
 	String&				_source;
 	int					_current;
-	std::vector<Token>*	_tokens;
-	Servers*			_servers;
-	Adrresses*			_addresses;
+	std::vector<Token>	_tokens;
+	std::vector<std::pair<String, String> > _addresses;
+	Servers				_servers;
 
 
 // INFO: constructors
 public:
 	Parser(std::vector<Token> tokens, String& source);
-	~Parser();
 
 
 // INFO: API
