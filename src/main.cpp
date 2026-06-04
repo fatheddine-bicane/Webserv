@@ -9,40 +9,19 @@
 #include "config_parser/Scanner/Definitions/Token.hpp"
 
 int main(int argc, char** argv) {
-	std::cout << "Hello from webserv" << std::endl;
-	(void) argc;
-	(void) argv;
+	Servers* servers = NULL;
 
-	// read config file content
-	std::fstream f(argv[1], std::ios::in | std::ios::binary);
-	if (!f.is_open()) {
-		std::cerr << "file not found";
-		return 1;
-	}
-	std::stringstream ss;
-	ss << f.rdbuf();
-	std::cout << "------------------" << std::endl;
-
-
-	String source = ss.str();
-
-	// scan config file
 	try {
-		// initialise scanner 
-		Scanner scanner(source);
+		// initialise scanner
+		Scanner scanner(argc, argv);
 		std::vector<Token> tokens = scanner.scanTokens();
 
 		// initialise parser
-		Parser parser(tokens, source);
+		Parser parser(tokens, *scanner.source);
 		parser.scanTokens();
+		servers = new Servers(parser.getServers());
+		(void)servers;
 
-
-
-		// std::vector<Token>::iterator it = tokens.begin();
-		// std::vector<Token>::iterator end = tokens.end();
-		// for (; it != end; it++) {
-		// 	std::cout << it->toString(source);
-		// }
 
 	} catch (std::exception& e) {
 		std::cout << e.what() << std::endl;
