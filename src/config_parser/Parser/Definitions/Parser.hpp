@@ -32,6 +32,8 @@ public:
 public:
 	void	scanTokens();
 	Servers& getServers();
+	std::vector<std::pair<String, String> >& getAddresses();
+
 
 
 // INFO: utility functions
