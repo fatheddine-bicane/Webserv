@@ -34,7 +34,7 @@ public:
 	String*	source;
 
 public:
-	Scanner(const String& path);
+	Scanner(int argc, char** argv);
 	std::vector<Token>	scanTokens();
 	~Scanner();
 

@@ -1,7 +1,16 @@
 #include "../Definitions/Scanner.hpp"
 
 
-Scanner::Scanner(const String& path) {
+Scanner::Scanner(int argc, char** argv) {
+
+	// if config file not provided use default one
+	String path;
+	if (argc == 1) {
+		path = "nginx/nginx.conf";
+	} else {
+		path = argv[1];
+	}
+
 	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 	if (!file.is_open()) {
 		throw std::runtime_error("Could not open file: " + path);
