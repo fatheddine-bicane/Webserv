@@ -312,8 +312,12 @@ private:
 
 public:
 
-	BlockDirectiveViolationException(const Token& token, const String& source) {
-		String error_type = "simple directives not allowed once a block directive appears in the context";
+	BlockDirectiveViolationException(const Token& token,
+									 const String& directive,
+									 const String& source) {
+		String error_type = "Once a '" + directive + "' block is defined, "
+			"only additional '" + directive + "' blocks are allowed in this"
+			" context until the current scope is closed.";
 
 		this->_err = generateForematedError(token, error_type, source);
 	}

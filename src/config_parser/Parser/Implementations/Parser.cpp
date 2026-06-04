@@ -181,7 +181,7 @@ void	Parser::parseHttp() {
 	while (!match(token, CONTEXT_END)) {
 		if (server_block_appeard && !match(token, SERVER)) {
 			if (isDirective(token.type)) {
-				throw BlockDirectiveViolationException(token, this->_source);
+				throw BlockDirectiveViolationException(token,"server", this->_source);
 			} else {
 				throw UnexpectedTokenException(token, this->_source);
 			}
@@ -239,7 +239,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 	while (!match(token, CONTEXT_END)) {
 		if (location_block_appered && !match(token, LOCATION)) {
 			if (isDirective(token.type)) {
-				throw BlockDirectiveViolationException(token, this->_source);
+				throw BlockDirectiveViolationException(token, "location", this->_source);
 			} else {
 				throw UnexpectedTokenException(token, this->_source);
 			}
