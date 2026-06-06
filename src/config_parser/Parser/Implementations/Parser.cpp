@@ -159,6 +159,17 @@ bool	Parser::isHttpMethod(const String& method) {
 		 || method == "PUT");
 }
 
+
+
+bool	Parser::isServerBlockExist(String& ip_port, String& server_name) {
+	if (this->_servers.find(ip_port) == this->_servers.end()) {
+		return false;
+	} else if (this->_servers[ip_port].find(server_name) == this->_servers[ip_port].end()) {
+		return false;
+	}
+	return true;
+}
+
 // -----------------------------------------------------------------
 
 
@@ -204,7 +215,11 @@ void	Parser::parseHttp() {
 				break;
 			case SERVER:
 				server_block_appeard = true;
-				parseServer(directive_context);
+				try {
+					parseServer(directive_context);
+				} catch (ParserExceptionWarning& e) {
+					std::cerr << e.what() << std::endl;
+				}
 				break;
 
 			// end of file reached without closing the context
@@ -233,6 +248,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 	bool server_name_parsed = false;
 	Token server_token = previousToken();
 	bool location_block_appered = false;
+	String ip_port = "0.0.0.0:8080";
 
 	Token token = consume();
 
@@ -247,7 +263,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 
 		switch (token.type) {
 			case SERVER_NAME:
-				parseServerName(server_name);
+				server_name = parseServerName();
 				server_name_parsed = true;
 				break;
 			case ROOT: parseRoot(server_directive.shared_directives); break;
@@ -274,7 +290,9 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 				location_block_appered = true;
 				parseLocation(server_directive);
 				break;
-			case LISTEN: parseListen(); break;
+			case LISTEN:
+				ip_port = parseListen();
+				break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -291,10 +309,15 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 		token = consume();
 	} // while match CONTEXT_END
 
-	if (server_name_parsed == true) {
-		this->_servers.insert(std::make_pair(server_name, server_directive));
-	} else {
-		throw ServerNameMissingException(server_token, this->_source);
+	if (!server_name_parsed) {
+		server_name = "default";
+	}
+
+	if (!isServerBlockExist(ip_port, server_name)) {
+		this->_servers[ip_port].insert(std::make_pair(server_name, server_directive));
+	}
+	else {
+		throw ServerBlockIgnoredException(server_token, server_name, ip_port, this->_source);
 	}
 }
 
@@ -522,15 +545,17 @@ void	Parser::parserCreateFullPutPath(SharedDirectives& directive_context) {
 
 
 
-void	Parser::parseServerName(String& server_name) {
+String	Parser::parseServerName() {
 	Token token = consume();
 
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	server_name = token.lexeme;
+	String server_name = token.lexeme;
 	expect(SEMICOLON);
+
+	return server_name;
 }
 
 
@@ -758,7 +783,7 @@ void	Parser::parseService(const String& service) {
 
 
 
-void	Parser::parseListen() {
+String	Parser::parseListen() {
 	Token token = consume();
 
 	if (!match(token, VALUE)) {
@@ -795,6 +820,8 @@ void	Parser::parseListen() {
 	}
 
 	expect(SEMICOLON);
+
+	return (ip + ":" + service);
 }
 
 // -----------------------------------------------------------------

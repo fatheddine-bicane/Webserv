@@ -3,8 +3,6 @@
 #include <exception>
 #include <sstream>
 #include <string>
-#include <algorithm>
-#include <set>
 #include "../../../Includes/colors.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
 
@@ -17,14 +15,14 @@ enum Port_error{
 
 
 
-class ParserException : public std::exception {
+class ParserExceptionError : public std::exception {
 protected:
 	std::string	generateForematedError(const Token& token,
 									   const String& error_type,
 									   const String& source) {
 		std::stringstream ss;
 
-		ss << RED << "Error:" << token.line << ":"
+		ss << RED << "Parser Error:" << token.line << ":"
 			<< token.spaces + token.tabs*4 << ": "
 			<< RESET << error_type << ": '"
 			<< token.lexeme
@@ -56,7 +54,7 @@ protected:
 
 
 
-class DuplicatedDirectiveException : public ParserException {
+class DuplicatedDirectiveException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -73,7 +71,7 @@ public:
 };
 
 
-class ExpectedTokenException : public ParserException {
+class ExpectedTokenException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -93,7 +91,7 @@ public:
 
 
 
-class IncorrectValueException : public ParserException {
+class IncorrectValueException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -111,7 +109,7 @@ public:
 
 
 
-class InvalidNumberOfArgumentsException : public ParserException {
+class InvalidNumberOfArgumentsException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -130,7 +128,7 @@ public:
 
 
 
-class UnexpectedTokenException : public ParserException {
+class UnexpectedTokenException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -155,7 +153,7 @@ public:
 
 
 
-class ValueTooLargeException : public ParserException {
+class ValueTooLargeException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -173,7 +171,7 @@ public:
 
 
 
-class InvalidValueExceptions : public ParserException {
+class InvalidValueExceptions : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -194,7 +192,7 @@ public:
 
 
 
-class DuplicatedValueException : public ParserException {
+class DuplicatedValueException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -213,7 +211,7 @@ public:
 
 
 
-class DirectiveNotAllowedHereException : public ParserException {
+class DirectiveNotAllowedHereException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -232,7 +230,7 @@ public:
 
 
 
-class UnsupportedCgiScriptType : public ParserException {
+class UnsupportedCgiScriptType : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -251,7 +249,7 @@ public:
 
 
 
-class InvalidPortNumberException : public ParserException {
+class InvalidPortNumberException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -283,7 +281,7 @@ public:
 
 
 
-class InvalidIpAddressValueException : public ParserException {
+class InvalidIpAddressValueException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -306,7 +304,7 @@ public:
 
 
 
-class BlockDirectiveViolationException : public ParserException {
+class BlockDirectiveViolationException : public ParserExceptionError {
 private:
 	std::string	_err;
 
@@ -327,25 +325,4 @@ public:
 	}
 
 	~BlockDirectiveViolationException() throw() {}
-};
-
-
-
-class ServerNameMissingException : public ParserException {
-private:
-	std::string	_err;
-
-public:
-
-	ServerNameMissingException(Token& token, const String& source) {
-		String error_type = "directive 'server_name' is missing in directive";
-		this->_err = generateForematedError(token, error_type, source);
-	}
-
-	const char * what() const throw() {
-		return this->_err.c_str();
-	}
-
-	~ServerNameMissingException() throw() {}
-
 };

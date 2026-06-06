@@ -137,7 +137,7 @@ void	Scanner::addToken(TokenType token_type, String lexeme) {
 String	Scanner::generateErrorString() {
 	std::stringstream ss;
 
-	ss << RED << "Error:" << this->_line << ":"
+	ss << RED << "Parse Error:" << this->_line << ":"
 	   << this->_spaces + this->_tabs*4 << ": "
 	   << RESET << "Unexpected character: '"
 	   <<  this->source->at(this->_current - 1)

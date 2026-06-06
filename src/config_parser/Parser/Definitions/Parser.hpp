@@ -5,14 +5,16 @@
 #include <utility>
 #include <map>
 #include <cstdlib>
+#include <algorithm>
 
 #include "../Definitions/Directives.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
 #include "../../Scanner/Definitions/TokenType.hpp"
-#include "../Exceptions/ParserException.hpp"
+#include "../Exceptions/ParserExceptionError.hpp"
+#include "../Exceptions/ParserExceptionWarning.hpp"
 
 typedef std::string String;
-typedef std::map<String, Server>	Servers;
+typedef  std::map<String, std::map<String, Server> > Servers;
 
 
 class Parser {
@@ -51,6 +53,7 @@ private:
 	bool	isAtEnd();
 	bool	isDirective(TokenType token_type);
 	bool	isHttpMethod(const String& method);
+	bool	isServerBlockExist(String& ip_port, String& server_name);
 
 
 // INFO: block directive parsers (context)
@@ -70,7 +73,7 @@ private:
 	void	parseIndex(SharedDirectives& directive_context);
 	void	parseDavMethods(SharedDirectives& directive_context);
 	void	parserCreateFullPutPath(SharedDirectives& directive_context);
-	void	parseServerName(String& server_name);
+	String	parseServerName();
 	void	parseReturn(std::pair<int, String>& return_d);
 	void	parseAlias(Location& location_context);
 	void	parseLimitExcept(Location& location_context);
@@ -78,6 +81,6 @@ private:
 	void	parseLocation(Server& server);
 	void	parseIp(const String& ip);
 	void	parseService(const String& port);
-	void	parseListen();
+	String	parseListen();
 
 };
