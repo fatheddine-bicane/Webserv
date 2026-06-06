@@ -326,24 +326,3 @@ public:
 
 	~BlockDirectiveViolationException() throw() {}
 };
-
-
-
-class ServerNameMissingException : public ParserExceptionError {
-private:
-	std::string	_err;
-
-public:
-
-	ServerNameMissingException(Token& token, const String& source) {
-		String error_type = "directive 'server_name' is missing in directive";
-		this->_err = generateForematedError(token, error_type, source);
-	}
-
-	const char * what() const throw() {
-		return this->_err.c_str();
-	}
-
-	~ServerNameMissingException() throw() {}
-
-};

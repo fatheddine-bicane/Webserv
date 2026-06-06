@@ -215,7 +215,11 @@ void	Parser::parseHttp() {
 				break;
 			case SERVER:
 				server_block_appeard = true;
-				parseServer(directive_context);
+				try {
+					parseServer(directive_context);
+				} catch (ParserExceptionWarning& e) {
+					std::cerr << e.what() << std::endl;
+				}
 				break;
 
 			// end of file reached without closing the context
@@ -310,7 +314,10 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 	}
 
 	if (!isServerBlockExist(ip_port, server_name)) {
-		this->_servers[ip_port].insert(std::make_pair(ip_port, server_directive));
+		this->_servers[ip_port].insert(std::make_pair(server_name, server_directive));
+	}
+	else {
+		throw ServerBlockIgnoredException(server_token, server_name, ip_port, this->_source);
 	}
 }
 

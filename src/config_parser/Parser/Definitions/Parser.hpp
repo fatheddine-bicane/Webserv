@@ -11,6 +11,7 @@
 #include "../../Scanner/Definitions/Token.hpp"
 #include "../../Scanner/Definitions/TokenType.hpp"
 #include "../Exceptions/ParserExceptionError.hpp"
+#include "../Exceptions/ParserExceptionWarning.hpp"
 
 typedef std::string String;
 typedef  std::map<String, std::map<String, Server> > Servers;
