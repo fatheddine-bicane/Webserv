@@ -248,7 +248,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 	bool server_name_parsed = false;
 	Token server_token = previousToken();
 	bool location_block_appered = false;
-	String ip_port;
+	String ip_port = "0.0.0.0:8080";
 
 	Token token = consume();
 
