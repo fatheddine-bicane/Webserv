@@ -78,6 +78,6 @@ private:
 	void	parseLocation(Server& server);
 	void	parseIp(const String& ip);
 	void	parseService(const String& port);
-	void	parseListen();
+	String	parseListen();
 
 };

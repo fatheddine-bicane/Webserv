@@ -233,6 +233,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 	bool server_name_parsed = false;
 	Token server_token = previousToken();
 	bool location_block_appered = false;
+	String ip_port;
 
 	Token token = consume();
 
@@ -274,7 +275,9 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 				location_block_appered = true;
 				parseLocation(server_directive);
 				break;
-			case LISTEN: parseListen(); break;
+			case LISTEN:
+				ip_port = parseListen();
+				break;
 
 			// end of file reached without closing the context
 			case END_OF_FILE:
@@ -760,7 +763,7 @@ void	Parser::parseService(const String& service) {
 
 
 
-void	Parser::parseListen() {
+String	Parser::parseListen() {
 	Token token = consume();
 
 	if (!match(token, VALUE)) {
@@ -797,6 +800,8 @@ void	Parser::parseListen() {
 	}
 
 	expect(SEMICOLON);
+
+	return (ip + ":" + service);
 }
 
 // -----------------------------------------------------------------
