@@ -10,7 +10,7 @@
 #include "../Definitions/Directives.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
 #include "../../Scanner/Definitions/TokenType.hpp"
-#include "../Exceptions/ParserException.hpp"
+#include "../Exceptions/ParserExceptionError.hpp"
 
 typedef std::string String;
 typedef  std::map<String, std::map<String, Server> > Servers;
