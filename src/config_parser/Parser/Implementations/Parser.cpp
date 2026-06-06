@@ -30,7 +30,7 @@ Servers&	Parser::getServers() {
 }
 
 
-std::vector<std::pair<String, String> >& Parser::getAddresses() {
+Addresses& Parser::getAddresses() {
 	return this->_addresses;
 }
 

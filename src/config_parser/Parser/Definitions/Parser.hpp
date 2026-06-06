@@ -15,6 +15,7 @@
 
 typedef std::string String;
 typedef  std::map<String, std::map<String, Server> > Servers;
+typedef std::vector<std::pair<String, String> > Addresses;
 
 
 class Parser {
@@ -22,7 +23,7 @@ private:
 	String&				_source;
 	int					_current;
 	std::vector<Token>	_tokens;
-	std::vector<std::pair<String, String> > _addresses;
+	Addresses			_addresses;
 	Servers				_servers;
 
 
@@ -35,7 +36,7 @@ public:
 public:
 	void	scanTokens();
 	Servers& getServers();
-	std::vector<std::pair<String, String> >& getAddresses();
+	Addresses& getAddresses();
 
 
 
