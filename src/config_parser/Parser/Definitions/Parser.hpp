@@ -70,7 +70,7 @@ private:
 	void	parseIndex(SharedDirectives& directive_context);
 	void	parseDavMethods(SharedDirectives& directive_context);
 	void	parserCreateFullPutPath(SharedDirectives& directive_context);
-	void	parseServerName(String& server_name);
+	String	parseServerName();
 	void	parseReturn(std::pair<int, String>& return_d);
 	void	parseAlias(Location& location_context);
 	void	parseLimitExcept(Location& location_context);

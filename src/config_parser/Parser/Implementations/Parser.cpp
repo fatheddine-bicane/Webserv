@@ -247,7 +247,7 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 
 		switch (token.type) {
 			case SERVER_NAME:
-				parseServerName(server_name);
+				server_name = parseServerName();
 				server_name_parsed = true;
 				break;
 			case ROOT: parseRoot(server_directive.shared_directives); break;
@@ -522,15 +522,17 @@ void	Parser::parserCreateFullPutPath(SharedDirectives& directive_context) {
 
 
 
-void	Parser::parseServerName(String& server_name) {
+String	Parser::parseServerName() {
 	Token token = consume();
 
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	server_name = token.lexeme;
+	String server_name = token.lexeme;
 	expect(SEMICOLON);
+
+	return server_name;
 }
 
 
