@@ -12,7 +12,7 @@
 #include "../Exceptions/ParserException.hpp"
 
 typedef std::string String;
-typedef std::map<String, Server>	Servers;
+typedef  std::map<String, std::map<String, Server> > Servers;
 
 
 class Parser {
@@ -51,6 +51,7 @@ private:
 	bool	isAtEnd();
 	bool	isDirective(TokenType token_type);
 	bool	isHttpMethod(const String& method);
+	bool	isServerBlockExist(String& ip_port, String& server_name);
 
 
 // INFO: block directive parsers (context)

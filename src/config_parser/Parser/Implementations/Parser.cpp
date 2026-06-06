@@ -159,6 +159,17 @@ bool	Parser::isHttpMethod(const String& method) {
 		 || method == "PUT");
 }
 
+
+
+bool	Parser::isServerBlockExist(String& ip_port, String& server_name) {
+	if (this->_servers.find(ip_port) == this->_servers.end()) {
+		return false;
+	} else if (this->_servers[ip_port].find(server_name) == this->_servers[ip_port].end()) {
+		return false;
+	}
+	return true;
+}
+
 // -----------------------------------------------------------------
 
 
@@ -294,10 +305,12 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 		token = consume();
 	} // while match CONTEXT_END
 
-	if (server_name_parsed == true) {
-		this->_servers.insert(std::make_pair(server_name, server_directive));
-	} else {
-		throw ServerNameMissingException(server_token, this->_source);
+	if (!server_name_parsed) {
+		server_name = "default";
+	}
+
+	if (!isServerBlockExist(ip_port, server_name)) {
+		this->_servers[ip_port].insert(std::make_pair(ip_port, server_directive));
 	}
 }
 
