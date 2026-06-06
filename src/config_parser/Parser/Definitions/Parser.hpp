@@ -5,6 +5,7 @@
 #include <utility>
 #include <map>
 #include <cstdlib>
+#include <algorithm>
 
 #include "../Definitions/Directives.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
