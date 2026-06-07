@@ -1,21 +1,15 @@
 #pragma once
 
-
-#include <exception>
 #include <string>
 
-class UnexpectedCharacterException : public std::exception {
-private:
-	std::string _err;
+#include "../../Includes/ParserExceptions.hpp"
 
+typedef std::string String;
+
+
+class UnexpectedCharacterException : public ParserException {
 public:
-	UnexpectedCharacterException(const std::string& err) {
+	UnexpectedCharacterException(const String& err) {
 		this->_err = err;
 	}
-
-	const char* what() const throw() {
-		return this->_err.c_str();
-	}
-
-	~UnexpectedCharacterException() throw() {}
 };
