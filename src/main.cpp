@@ -1,12 +1,5 @@
-#include <exception>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include "./config_parser/Scanner/Definitions/Scanner.hpp"
-#include "config_parser/Parser/Definitions/Parser.hpp"
-#include "config_parser/Scanner/Definitions/Token.hpp"
+#include "Includes/webserv.hpp"
+
 
 int main(int argc, char** argv) {
 	Servers* servers = NULL;
