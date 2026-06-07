@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <vector>
 #include <sys/epoll.h>
+#include <sys/socket.h>
 
 #include "../config_parser/Scanner/Definitions/Scanner.hpp"
 #include "../Server_socket_multiplexing/Exceptions/SystemCallsException.hpp"
