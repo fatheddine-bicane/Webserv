@@ -1,5 +1,6 @@
 #include "../Definitions/ServerSocketsMultiplexing.hpp"
 #include <algorithm>
+#include <iostream>
 #include <sys/epoll.h>
 #include <vector>
 
@@ -29,7 +30,7 @@ void	ServerSocketsMultiplexing::setupServerSockets() {
 		std::vector<SOCKET> opend_sockets;
 
 		try {
-			populateBindAddress(it, &hints, bind_address);
+			populateBindAddress(it, &hints, &bind_address);
 
 			SOCKET socket_listen = createListeningSocket(bind_address, opend_sockets);
 
@@ -71,9 +72,9 @@ populateHintsStruct(struct addrinfo& hints) {
 void	ServerSocketsMultiplexing::
 populateBindAddress(Addresses::iterator& it,
 					struct addrinfo* hints,
-					struct addrinfo* bind_address) {
+					struct addrinfo** bind_address) {
 
-	int status = getaddrinfo(it->first.c_str(), it->second.c_str(), hints, &bind_address);
+	int status = getaddrinfo(it->first.c_str(), it->second.c_str(), hints, bind_address);
 	if (status != 0) {
 		throw SystemCallsFailedException("getaddrinfo()");
 	}

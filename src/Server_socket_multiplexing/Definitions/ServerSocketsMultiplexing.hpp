@@ -43,7 +43,7 @@ private:
 	void	populateHintsStruct(struct addrinfo& hints);
 	void	populateBindAddress(Addresses::iterator& it,
 							    struct addrinfo* hints,
-							    struct addrinfo* bind_address);
+							    struct addrinfo** bind_address);
 	SOCKET	createListeningSocket(struct addrinfo* bind_address,
 								  std::vector<SOCKET>& opend_sockets);
 	void	bindListeningSocketToListeningAddress(Addresses::iterator& it,
