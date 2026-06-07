@@ -24,23 +24,22 @@ void	ServerSocketsMultiplexing::setupServerSockets() {
 	struct addrinfo hints;
 	populateHintsStruct(hints);
 
-
+	std::vector<Connection*> opend_sockets;
 	for (; it != end; it++) {
 		struct addrinfo* bind_address = NULL;
-		std::vector<SOCKET> opend_sockets;
 
 		try {
 			populateBindAddress(it, &hints, &bind_address);
 
-			SOCKET socket_listen = createListeningSocket(bind_address, opend_sockets);
+			SOCKET socket_listen = createListeningSocket(bind_address);
 
 			bindListeningSocketToListeningAddress(it, socket_listen, bind_address);
 
 			prepareSocketToAcceptConnections(socket_listen);
 
-			addSocketToEpollInstance(it, socket_listen);
+			addSocketToEpollInstance(it, socket_listen, opend_sockets);
 		} catch (SystemCallsFailedException& e) {
-			std::for_each(opend_sockets.begin(), opend_sockets.end(), close);
+			std::for_each(opend_sockets.begin(), opend_sockets.end(), eraseConnection);
 			throw;
 		}
 
@@ -82,8 +81,7 @@ populateBindAddress(Addresses::iterator& it,
 
 
 SOCKET	ServerSocketsMultiplexing::
-createListeningSocket(struct addrinfo* bind_address,
-					  std::vector<SOCKET>& opend_sockets) {
+createListeningSocket(struct addrinfo* bind_address) {
 	SOCKET socket_listen = socket(bind_address->ai_family,
 							      bind_address->ai_socktype,
 							      bind_address->ai_protocol);
@@ -91,7 +89,6 @@ createListeningSocket(struct addrinfo* bind_address,
 		throw SystemCallsFailedException("socket()");
 	}
 
-	opend_sockets.push_back(socket_listen);
 	return socket_listen;
 }
 
@@ -120,17 +117,30 @@ prepareSocketToAcceptConnections(SOCKET socket_listen) {
 
 
 void	ServerSocketsMultiplexing::
-addSocketToEpollInstance(Addresses::iterator& it, SOCKET& socket_listen) {
+addSocketToEpollInstance(Addresses::iterator& it,
+						 SOCKET& socket_listen,
+						 std::vector<Connection*>& opend_sockets) {
+	ServerConnection* server_connection = new ServerConnection(socket_listen);
+
 	struct epoll_event event;
 	event.events = EPOLLIN;
-	event.data.fd = socket_listen;
+	event.data.ptr = server_connection;
 
 	int status = epoll_ctl(this->_epfd, EPOLL_CTL_ADD, socket_listen, &event);
 	if (status == -1) {
+		delete server_connection;
+		CloseSocket(socket_listen);
 		throw SystemCallsFailedException("epoll_ctl()");
 	}
 
+	opend_sockets.push_back(server_connection);
 	this->_sockets_map[socket_listen] = String(it->first + ":" + it->second);
+}
+
+
+void	ServerSocketsMultiplexing::eraseConnection(Connection* connection) {
+	CloseSocket(connection->fd);
+	delete connection;
 }
 
 //--------------------------------------------------------------------------------

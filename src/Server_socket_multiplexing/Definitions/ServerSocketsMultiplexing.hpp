@@ -9,6 +9,7 @@
 #include <utility>
 #include <unistd.h>
 #include "../Exceptions/SystemCallsException.hpp"
+#include "../../Includes/ServerConnection.hpp"
 
 #define IsValidSocket(s) ((s) >= 0)
 #define CloseSocket(s) (close(s))
@@ -43,11 +44,13 @@ private:
 	void	populateBindAddress(Addresses::iterator& it,
 							    struct addrinfo* hints,
 							    struct addrinfo** bind_address);
-	SOCKET	createListeningSocket(struct addrinfo* bind_address,
-								  std::vector<SOCKET>& opend_sockets);
+	SOCKET	createListeningSocket(struct addrinfo* bind_address);
 	void	bindListeningSocketToListeningAddress(Addresses::iterator& it,
 												  SOCKET socket_listen,
 												  struct addrinfo* bind_address);
 	void	prepareSocketToAcceptConnections(SOCKET socket_listen);
-	void	addSocketToEpollInstance(Addresses::iterator& it, SOCKET& socket_listen);
+	void	addSocketToEpollInstance(Addresses::iterator& it,
+								     SOCKET& socket_listen,
+								     std::vector<Connection*>& opend_sockets);
+	static void	eraseConnection(Connection* connection);
 };
