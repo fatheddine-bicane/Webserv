@@ -1,15 +1,15 @@
 #pragma once
 
-#include <exception>
 #include <sstream>
 #include <string>
 #include "../../../Includes/colors.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
+#include "../../Includes/ParserExceptions.hpp"
 
 typedef std::string String;
 
 
-class ParserExceptionWarning : public std::exception {
+class ParserExceptionWarning : public ParserException {
 protected:
 	std::string	generateForematedWarning(const Token& token,
 									   const String& error_type,
@@ -48,9 +48,6 @@ protected:
 
 
 class ServerBlockIgnoredException : public ParserExceptionWarning {
-private:
-	std::string	_err;
-
 public:
 	ServerBlockIgnoredException(const Token& token,
 							    const String& server_name,
@@ -62,11 +59,4 @@ public:
 
 		this->_err = generateForematedWarning(token, error_type, source);
 	}
-
-	const char * what() const throw() {
-		return this->_err.c_str();
-	}
-
-	~ServerBlockIgnoredException() throw() {}
-
 };
