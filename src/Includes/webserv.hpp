@@ -15,3 +15,5 @@
 #include "../config_parser/Parser/Definitions/Parser.hpp"
 #include "../config_parser/Scanner/Definitions/Token.hpp"
 #include "../Server_socket_multiplexing/Definitions/ServerSocketsMultiplexing.hpp"
+#include "ServerConnection.hpp"
+#include "ClientConnection.hpp"

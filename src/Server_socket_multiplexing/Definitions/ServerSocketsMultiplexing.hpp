@@ -16,7 +16,6 @@
 typedef std::string String;
 typedef std::vector<std::pair<String, String> > Addresses;
 typedef std::map<int, String> SocketsMap;
-typedef int SOCKET;
 
 
 class ServerSocketsMultiplexing {
