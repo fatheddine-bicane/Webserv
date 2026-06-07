@@ -11,9 +11,9 @@ typedef std::string String;
 
 class ParserExceptionWarning : public ParserException {
 protected:
-	std::string	generateForematedWarning(const Token& token,
-									   const String& error_type,
-									   const String& source) {
+	String	generateForematedWarning(const Token& token,
+								   const String& error_type,
+								   const String& source) {
 		std::stringstream ss;
 
 		ss << YELLOW << "Parser Warning:" << token.line << ":"

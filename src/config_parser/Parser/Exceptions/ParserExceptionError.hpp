@@ -17,9 +17,9 @@ enum Port_error{
 
 class ParserExceptionError : public ParserException{
 protected:
-	std::string	generateForematedError(const Token& token,
-									   const String& error_type,
-									   const String& source) {
+	String	generateForematedError(const Token& token,
+								   const String& error_type,
+								   const String& source) {
 		std::stringstream ss;
 
 		ss << RED << "Parser Error:" << token.line << ":"

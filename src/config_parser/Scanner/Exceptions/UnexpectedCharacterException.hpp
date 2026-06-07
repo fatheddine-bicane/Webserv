@@ -4,10 +4,12 @@
 
 #include "../../Includes/ParserExceptions.hpp"
 
+typedef std::string String;
+
 
 class UnexpectedCharacterException : public ParserException {
 public:
-	UnexpectedCharacterException(const std::string& err) {
+	UnexpectedCharacterException(const String& err) {
 		this->_err = err;
 	}
 };
