@@ -4,8 +4,8 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <cstring>
 #include <netdb.h> 
+#include <string.h>
 
 class Listener{
 private:
