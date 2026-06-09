@@ -1,6 +1,6 @@
 #pragma once 
 
-typedef int SOCKET;
+#include "Typedef.hpp"
 
 enum ConnectionType {
 	SERVER_S, CLIENT_S

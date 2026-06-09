@@ -6,7 +6,6 @@
 #include <iostream>
 #include <map>
 #include <sstream>
-#include <string>
 #include <vector>
 #include <fstream>
 #include <stdexcept>
@@ -15,8 +14,7 @@
 #include "./Token.hpp"
 #include "../Exceptions/UnexpectedCharacterException.hpp"
 #include "../../../Includes/colors.hpp"
-
-typedef std::string String;
+#include "../../../Includes/Typedef.hpp"
 
 
 class Scanner {

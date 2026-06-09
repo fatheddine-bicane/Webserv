@@ -3,11 +3,10 @@
 #include <list>
 #include <map>
 #include <set>
-#include <string>
 #include <utility>
 #include <vector>
 
-typedef std::string String;
+#include "../../../Includes/Typedef.hpp"
 
 
 /**

@@ -1,10 +1,9 @@
 #pragma once
 
-#include <string>
 #include <iostream>
 #include "./TokenType.hpp"
 
-typedef std::string String;
+#include "../../../Includes/Typedef.hpp"
 
 
 class Token {

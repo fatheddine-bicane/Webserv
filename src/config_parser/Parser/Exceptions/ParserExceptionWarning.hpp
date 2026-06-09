@@ -1,12 +1,11 @@
 #pragma once
 
 #include <sstream>
-#include <string>
+
 #include "../../../Includes/colors.hpp"
 #include "../../Scanner/Definitions/Token.hpp"
 #include "../../Includes/ParserExceptions.hpp"
-
-typedef std::string String;
+#include "../../../Includes/Typedef.hpp"
 
 
 class ParserExceptionWarning : public ParserException {

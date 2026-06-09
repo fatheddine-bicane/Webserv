@@ -1,9 +1,8 @@
 #pragma once
 
 #include <exception>
-#include <string>
+#include "../../Includes/Typedef.hpp"
 
-typedef std::string String;
 
 
 class ParserException : public std::exception {

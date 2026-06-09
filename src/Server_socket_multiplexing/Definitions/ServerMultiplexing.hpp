@@ -3,7 +3,6 @@
 #include <map>
 #include <netdb.h>
 #include <set>
-#include <string>
 #include <vector>
 #include <sys/epoll.h>
 #include <algorithm>
@@ -15,13 +14,11 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cstring>
+
 #include "../../Includes/ServerConnection.hpp"
 #include "../Exceptions/SystemCallsExceptions.hpp"
-
-typedef std::string String;
-typedef std::map<SOCKET, String> SocketsMap;
-typedef std::vector<std::pair<String, String> > Addresses;
-typedef int EP_INSTANCE;
+#include "../../Includes/Typedef.hpp"
 
 
 class ServerMultiplexing{

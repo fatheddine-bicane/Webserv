@@ -1,10 +1,7 @@
 #pragma once
 
-#include <string>
-
 #include "../../Includes/ParserExceptions.hpp"
-
-typedef std::string String;
+#include "../../../Includes/Typedef.hpp"
 
 
 class UnexpectedCharacterException : public ParserException {

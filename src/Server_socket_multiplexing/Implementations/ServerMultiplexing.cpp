@@ -35,7 +35,7 @@ void ServerMultiplexing::monitorListeningSocket(SOCKET socket_listen, Addresses:
 	event.events = EPOLLIN;
 	event.data.ptr = server_connection;
 	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, socket_listen, &event) < 0){
-		close(socket_listen);
+		CloseSocket(socket_listen);
 		delete server_connection;
 		throw SystemCallsFailedException("epoll_ctl()");
 	}
@@ -51,16 +51,16 @@ SOCKET ServerMultiplexing::createListeningSocket(Addresses::iterator& ip_port, s
 		throw SystemCallsFailedException("getaddrinfo()");
 
 	SOCKET sock_listen = socket(bind_addr->ai_family, bind_addr->ai_socktype, bind_addr->ai_protocol);
-	if (sock_listen < 0)
+	if (!IsValidSocket(sock_listen))
 		throw SystemCallsFailedException("socket()");
 
 	if (bind(sock_listen, bind_addr->ai_addr, bind_addr->ai_addrlen) < 0) {
-		close(sock_listen);
+		CloseSocket(sock_listen);
 		throw BindSysCallFailedException(ip_port);
 	}
 
 	if(listen(sock_listen, 128) < 0){
-		close(sock_listen);
+		CloseSocket(sock_listen);
 		throw SystemCallsFailedException("listen()");
 	}
 
@@ -69,7 +69,7 @@ SOCKET ServerMultiplexing::createListeningSocket(Addresses::iterator& ip_port, s
 }
 
 void ServerMultiplexing::cleanup(Connection* connection) {
-	close(connection->fd);
+	CloseSocket(connection->fd);
 	delete connection;
 }
 

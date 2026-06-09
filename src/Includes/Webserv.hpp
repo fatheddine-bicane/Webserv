@@ -14,5 +14,4 @@
 #include "Connection.hpp"
 #include "ServerConnection.hpp"
 #include "ClientConnection.hpp"
-
-typedef int EP_INSTANCE;
+#include "Typedef.hpp"

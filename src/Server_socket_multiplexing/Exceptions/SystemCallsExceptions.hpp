@@ -3,14 +3,10 @@
 #include <cerrno>
 #include <exception>
 #include <sstream>
-#include <string>
 #include <vector>
 
 #include "../../Includes/colors.hpp"
-
-typedef std::string String;
-typedef std::vector<std::pair<String, String> > Addresses;
-
+#include "../../Includes/Typedef.hpp"
 
 class SystemCallsFailedException : public std::exception {
 protected:
