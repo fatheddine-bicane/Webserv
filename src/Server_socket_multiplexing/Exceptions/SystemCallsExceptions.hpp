@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cerrno>
+#include <cstring>
 #include <exception>
 #include <sstream>
 #include <vector>
@@ -17,7 +18,7 @@ protected:
 	String	generateErrorMessage(const String& sys_call) {
 		std::stringstream ss;
 		ss << RED << "System call Error: " << RESET
-		   << sys_call << " failed, errno value: " << errno;
+		   << sys_call << " failed. Reason: " << strerror(errno);
 
 		return ss.str();
 	}
@@ -45,6 +46,8 @@ public:
 		ss << RED << "System call Error: " << RESET
 		   << "bind() failed, address: '"
 		   << ip_port->first << ":" << ip_port->second
-		   << "' already in use, errno value: " << errno;
+		   << "'. Reason: " << strerror(errno);
+
+		this->_err = ss.str();
 	}
 };
