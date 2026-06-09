@@ -15,3 +15,20 @@
 #include "ServerConnection.hpp"
 #include "ClientConnection.hpp"
 #include "Typedef.hpp"
+
+
+class Webserv {
+public:
+	Servers*	servers;
+	SocketsMap*	sockets_map;
+	EP_INSTANCE	epfd;
+
+public:
+	// INFO: constructors/destructor
+	Webserv();
+	~Webserv();
+
+	// INFO: setters
+	void	setServers(Servers& servers);
+	void	setSocketsMap(SocketsMap& sockets_map);
+};

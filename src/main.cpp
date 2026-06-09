@@ -3,9 +3,7 @@
 
 
 int main(int argc, char** argv) {
-	Servers* servers = NULL;
-	SocketsMap* sockets_map = NULL;
-	EP_INSTANCE epfd = epoll_create(1);
+	Webserv	webserv;
 
 	try {
 		// initialise scanner
@@ -15,17 +13,17 @@ int main(int argc, char** argv) {
 		// initialise parser
 		Parser parser(tokens, *scanner.source);
 		parser.scanTokens();
-		servers = new Servers(parser.getServers());
+		webserv.setServers(parser.getServers());
 		
 
 		// Initialize EpollMultiplexer
-		ServerMultiplexing multiplexer = ServerMultiplexing(parser.getAddresses(), epfd);
+		ServerMultiplexing multiplexer = ServerMultiplexing(parser.getAddresses(), webserv.epfd);
 		multiplexer.bootstrapServerListeners();
-		sockets_map = new SocketsMap(multiplexer.getSocketsMap());
+		webserv.setSocketsMap(multiplexer.getSocketsMap());
 
 		while (true) {
 		struct epoll_event events[10];
-		int n = epoll_wait(epfd, events, 10, 10);
+		int n = epoll_wait(webserv.epfd, events, 10, 10);
 
 		for (int i = 0; i < n; i++) {
 
@@ -33,7 +31,7 @@ int main(int argc, char** argv) {
 
 			// if its a listening socket
 			if (connection->type == SERVER_S) {
-				String ip = sockets_map->at(connection->fd);
+				String ip = webserv.sockets_map->at(connection->fd);
 				std::cout << "new connection to: " << ip << std::endl;
 
 				SOCKET socket_client = accept(connection->fd, NULL, NULL);
@@ -42,7 +40,7 @@ int main(int argc, char** argv) {
 				struct epoll_event event;
 				event.events = EPOLLIN;
 				event.data.ptr = client_connection;
-				int status = epoll_ctl(epfd, EPOLL_CTL_ADD, socket_client, &event);
+				int status = epoll_ctl(webserv.epfd, EPOLL_CTL_ADD, socket_client, &event);
 				if (status == -1) {
 					delete client_connection;
 				}
@@ -59,7 +57,6 @@ int main(int argc, char** argv) {
 				std::cout << buffer << std::endl;
 			}
 		}
-		(void)servers;
 		}
 	} catch (std::exception& e) {
 
