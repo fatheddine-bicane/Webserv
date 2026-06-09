@@ -2,7 +2,8 @@
 
 // INFO: constructors/destructor
 // -------------------------------------------------
-Webserv::Webserv() {
+Webserv::Webserv()
+	: error_log("Log/error_log.txt") {
 	this->servers = NULL;
 	this->sockets_map = NULL;
 	this->epfd = epoll_create(1);

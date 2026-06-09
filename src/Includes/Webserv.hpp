@@ -22,6 +22,7 @@ public:
 	Servers*	servers;
 	SocketsMap*	sockets_map;
 	EP_INSTANCE	epfd;
+	std::ofstream error_log;
 
 public:
 	// INFO: constructors/destructor
