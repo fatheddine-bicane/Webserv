@@ -23,8 +23,28 @@ int main(int argc, char** argv) {
 		return 2;
 	} catch (SystemCallsFailedException& e) {
 		std::cout << e.what() << std::endl;
-		return 2;
+		return 3;
 	}
+
+	while (true) {
+		webserv.getReadySockets();
+
+		for (int index = 0; index < webserv.events_size; index++) {
+			Connection*	connection = webserv.getConnectionObject(index);
+
+			if (connection->type == SERVER_S) {
+				try {
+					webserv.addNewClientConnection(connection);
+				} catch (ConnectionException& e) {
+					webserv.error_log << e.what() << std::endl;
+				}
+			}
+
+			else if (connection->type == CLIENT_S) {
+			}
+
+		} // for each ready socket
+	} //while true
 
 	return 0;
 }

@@ -18,3 +18,4 @@ typedef std::vector<std::pair<String, String> > Addresses;
 
 #define IsValidSocket(s) ((s) >= 0)
 #define CloseSocket(s) (close(s))
+#define SocketAdded(s) ((s) == 0)
