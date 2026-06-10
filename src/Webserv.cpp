@@ -48,7 +48,6 @@ Connection*	Webserv::getConnectionObject(int index) {
 
 
 void	Webserv::addNewClientConnection(Connection* connection) {
-	(void)connection;
 	SOCKET client_socket = accept(connection->fd, NULL, NULL);
 	if (!IsValidSocket(client_socket)) {
 		throw ConnectionException("accept()");
