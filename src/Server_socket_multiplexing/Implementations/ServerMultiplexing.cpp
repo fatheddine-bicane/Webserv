@@ -32,7 +32,7 @@ void ServerMultiplexing::monitorListeningSocket(SOCKET socket_listen, Addresses:
 	ServerConnection *server_connection = new ServerConnection(socket_listen);
 
 	struct epoll_event event;
-	event.events = EPOLLIN;
+	event.events = EPOLLIN | EPOLLET;
 	event.data.ptr = server_connection;
 	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, socket_listen, &event) < 0){
 		CloseSocket(socket_listen);

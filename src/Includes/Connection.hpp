@@ -16,4 +16,6 @@ public:
 		this->type = type;
 		this->fd = fd;
 	}
+
+	virtual ~Connection() {}
 };
