@@ -54,6 +54,18 @@ SOCKET ServerMultiplexing::createListeningSocket(Addresses::iterator& ip_port, s
 	if (!IsValidSocket(sock_listen))
 		throw SystemCallsFailedException("socket()");
 
+
+	// WARNING: debugging
+	// --------------------------------------------------------
+	int opt = 1;
+	if (setsockopt(sock_listen, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		CloseSocket(sock_listen);
+		freeaddrinfo(bind_addr);
+		throw SystemCallsFailedException("setsockopt(SO_REUSEADDR)");
+	}
+	// --------------------------------------------------------
+
+
 	if (bind(sock_listen, bind_addr->ai_addr, bind_addr->ai_addrlen) < 0) {
 		CloseSocket(sock_listen);
 		throw BindSysCallFailedException(ip_port);
