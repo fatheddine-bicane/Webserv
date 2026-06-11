@@ -1,13 +1,22 @@
 #pragma once
 
 #include <map>
+#include <sys/socket.h>
+#include <cerrno>
 
 #include "../../Includes/Typedef.hpp"
 
 
+class ClientConnection;
+
 enum RequestState {
 	// parse ongoing
+	INCOMPLETE,
 	START_LINE, HEADERS, BODY,
+	// request parsed and its correct
+	COMPLETE,
+	// request parsed and its not correct
+	MALFORMED
 };
 
 
@@ -18,9 +27,14 @@ enum HTTPMethod {
 
 // INFO: main class
 class Request {
-public:
-	RequestState				state;
+private:
+	RequestState		_state;
+	SOCKET				_fd;
+	String				_buffer;
+	ClientConnection*	_client_connection;
+	
 
+public:
 	// HTTP message
 	// start-line
 	HTTPMethod					method;
@@ -33,5 +47,19 @@ public:
 
 public:
 	// INFO: constructor
-	Request();
+	Request(SOCKET fd, ClientConnection* client_connection);
+
+
+public:
+	// INFO: api
+	void	attemptRequestParse();
+	bool	isRequestState(RequestState request_state);
+
+
+
+
+private:
+	// INFO: helper functions
+	void	readSocketBuffer();
+
 };
