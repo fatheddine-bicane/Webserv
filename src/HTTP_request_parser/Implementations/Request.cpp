@@ -48,7 +48,7 @@ void	Request::readSocketBuffer() {
 	char	buffer[4096];
 
 	while (true) {
-		size_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
+		ssize_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
 
 		// buffer was populated append the read data to request buffer
 		if (bytes_read > 0) {
