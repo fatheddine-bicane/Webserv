@@ -21,7 +21,13 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 void	Request::attemptRequestParse() {
 	readSocketBuffer();
 
+	while (isRequestState(INCOMPLETE)) {
+		switch (this->_state) {
+			case START_LINE: parseStartLine(); break;
 
+			default: break;
+		}
+	}
 }
 
 
@@ -68,8 +74,155 @@ void	Request::readSocketBuffer() {
 }
 
 
+
+
+size_t	Request::getCRLFPosition() {
+	size_t pos = this->_buffer.find("\r\n");
+
+	// accept a single LF as line terminator
+	if (pos == String::npos) {
+		pos = this->_buffer.find("\n");
+	}
+
+	return pos;
+}
+
+
+
+
+void	Request::replaceBareCRWithSP(String& request_line) {
+	String::iterator it = request_line.begin();
+	String::iterator end = request_line.end();
+
+	for (; it != end; it++) {
+		if (*it == '\r') {
+			*it = ' ';
 		}
 	}
 }
+
+
+
+void	Request::trimString(String& string) {
+	// trim right
+	size_t end = string.find_last_not_of(' ');
+	if (end != String::npos) {
+		string.erase(end + 1);
+	}
+
+	// trim left
+	size_t start = string.find_first_not_of(' ');
+	if (start != String::npos) {
+		string.erase(0, start);
+	}
+}
+
+
+bool	Request::malformedRequest(STATUS_CODE status_code) {
+	this->status_code = status_code;
+	this->_state = MALFORMED;
+	return false;
+}
+
+
+
+void	Request::parseStartLine() {
+	size_t pos = getCRLFPosition();
+	// start line not complete
+	if (pos == String::npos) {
+		return;
+	}
+
+	String start_line = this->_buffer.substr(0, pos);
+	replaceBareCRWithSP(start_line);
+	trimString(start_line);
+
+	if (!parseMethod(start_line)) return;
+	if (!parseTargetResource(start_line)) return;
+	if (!parseHTTPVersion(start_line)) return;
+
+	this->_state = HEADERS;
+}
+
+
+
+bool	Request::parseMethod(String& start_line) {
+	size_t pos = start_line.find(' ');
+	if (pos == String::npos) {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	String method = start_line.substr(0, pos);
+	// if method supported
+	if (method == "GET") {
+		this->method = GET;
+	} else if (method == "POST") {
+		this->method = POST;
+	} else if (method == "DELETE") {
+		this->method = DELETE;
+	} else if (method == "PUT") {
+		this->method = PUT;
+	}
+
+	// if server dosent recognize the method
+	else {
+		return malformedRequest(501); // 501 Not Implemented
+	}
+
+	// update line
+	start_line = start_line.substr(pos + 1);
+	return true;
+}
+
+
+
+bool	Request::parseTargetResource(String& start_line) {
+	size_t pos = start_line.find(' ');
+	if (pos == String::npos) {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	String target_resource = start_line.substr(0, pos);
+
+	// server limit refusing to process long URIs
+	if (target_resource.length() >= 100) {
+		return malformedRequest(414); // 414 URI Too Long
+	}
+
+	this->target_resource = target_resource;
+
+	// update line
+	start_line = start_line.substr(pos + 1);
+	return true;
+}
+
+
+
+bool	Request::parseHTTPVersion(String& HTTP_version) {
+	String http = HTTP_version.substr(0, HTTP_version.find('/'));
+	if (http != "HTTP") {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	size_t pos = HTTP_version.find('/');
+	if (pos == String::npos) {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	String value = HTTP_version.substr(pos + 1);
+	if (value.length() != 3) {
+		return malformedRequest(400); // 400 Bad Request
+	}
+	if (!isdigit(value[0]) || !isdigit(value[2])) {
+		return malformedRequest(400); // 400 Bad Request
+	}
+	if (value[1] != '.') {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	this->HTTP_version = value;
+	return true;
+}
+
 
 // --------------------------------------------

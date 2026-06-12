@@ -15,6 +15,7 @@ typedef  std::map<String, std::map<String, Server> > Servers;
 typedef std::map<SOCKET, String> SocketsMap;
 // sockets addresses
 typedef std::vector<std::pair<String, String> > Addresses;
+typedef int STATUS_CODE; // http status code
 
 #define IsValidSocket(s) ((s) >= 0)
 #define CloseSocket(s) (close(s))

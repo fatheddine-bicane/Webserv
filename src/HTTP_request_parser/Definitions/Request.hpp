@@ -38,12 +38,13 @@ public:
 	// HTTP message
 	// start-line
 	HTTPMethod					method;
-	String						target;
+	String						target_resource;
 	String						HTTP_version;
 	// headers
 	std::map<String, String>	headers;
 	// TODO:body handling to be determined
 
+	STATUS_CODE			status_code;
 
 public:
 	// INFO: constructor
@@ -61,5 +62,15 @@ public:
 private:
 	// INFO: helper functions
 	void	readSocketBuffer();
+	size_t	getCRLFPosition();
+	void	replaceBareCRWithSP(String& request_line);
+	void	trimString(String& string);
+	bool	malformedRequest(STATUS_CODE status_code);
+
+	// INFO: parse start line
+	void	parseStartLine();
+	bool	parseMethod(String& start_line);
+	bool	parseTargetResource(String& start_line);
+	bool	parseHTTPVersion(String& start_line);
 
 };
