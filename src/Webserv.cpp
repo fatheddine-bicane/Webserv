@@ -53,18 +53,12 @@ void	Webserv::addNewClientConnection(Connection* connection) {
 		throw ConnectionException("accept()");
 	}
 
-	int status = fcntl(client_socket, F_SETFL, O_NONBLOCK);
-    if (status == -1) {
-		CloseSocket(client_socket);
-		throw SystemCallsFailedException("fcntl()");
-    }
-
 	ClientConnection* client_connection = new ClientConnection(client_socket);
 	struct epoll_event event;
 	event.events = EPOLLIN;
 	event.data.ptr = client_connection;
 
-	status = epoll_ctl(this->epfd, EPOLL_CTL_ADD, client_socket, &event);
+	int status = epoll_ctl(this->epfd, EPOLL_CTL_ADD, client_socket, &event);
 	if (!SocketAdded(status)) {
 		CloseSocket(client_socket);
 		delete client_connection;
