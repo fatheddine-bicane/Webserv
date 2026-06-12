@@ -64,11 +64,13 @@ void	Request::readSocketBuffer() {
 	else if (bytes_read == 0) {
 		// if state complete serve request
 		// close connection
+		this->_client_connection->state = CLOSE;
 		return;
 	}
 
 	// a network fatal error occured: bytes_read == -1
 	else {
+		this->_client_connection->state = CLOSE;
 		return;
 	}
 }
