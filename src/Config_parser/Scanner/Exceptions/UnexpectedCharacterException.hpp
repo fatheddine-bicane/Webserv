@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Includes/ParserExceptions.hpp"
-#include "../../../Includes/Typedef.hpp"
+#include "../../../Core_modules/Typedef.hpp"
 
 
 class UnexpectedCharacterException : public ParserException {

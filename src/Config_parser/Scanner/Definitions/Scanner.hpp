@@ -13,8 +13,8 @@
 #include "./TokenType.hpp"
 #include "./Token.hpp"
 #include "../Exceptions/UnexpectedCharacterException.hpp"
-#include "../../../Includes/colors.hpp"
-#include "../../../Includes/Typedef.hpp"
+#include "../../../Core_modules/colors.hpp"
+#include "../../../Core_modules/Typedef.hpp"
 
 
 class Scanner {

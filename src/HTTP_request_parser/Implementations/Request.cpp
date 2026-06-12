@@ -1,5 +1,5 @@
 #include "../Definitions/Request.hpp"
-#include "../../Includes/ClientConnection.hpp"
+#include "../../Core_modules/Connection/Definitions/ClientConnection.hpp"
 
 // INFO: constructor
 // --------------------------------------------

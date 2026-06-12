@@ -6,8 +6,8 @@
 #include <sstream>
 #include <vector>
 
-#include "../../Includes/colors.hpp"
-#include "../../Includes/Typedef.hpp"
+#include "../../Core_modules/colors.hpp"
+#include "../../Core_modules/Typedef.hpp"
 
 class SystemCallsFailedException : public std::exception {
 protected:

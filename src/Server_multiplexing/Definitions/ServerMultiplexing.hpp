@@ -16,9 +16,10 @@
 #include <unistd.h>
 #include <cstring>
 
-#include "../../Includes/ServerConnection.hpp"
+#include "../../Core_modules/Connection/Definitions/ClientConnection.hpp"
+#include "../../Core_modules/Connection/Definitions/ServerConnection.hpp"
 #include "../Exceptions/SystemCallsExceptions.hpp"
-#include "../../Includes/Typedef.hpp"
+#include "../../Core_modules/Typedef.hpp"
 
 
 class ServerMultiplexing{

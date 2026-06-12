@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "Typedef.hpp"
+#include "../../Typedef.hpp"
 
 enum ConnectionType {
 	SERVER_S, CLIENT_S

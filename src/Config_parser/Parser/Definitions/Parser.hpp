@@ -12,7 +12,7 @@
 #include "../../Scanner/Definitions/TokenType.hpp"
 #include "../Exceptions/ParserExceptionError.hpp"
 #include "../Exceptions/ParserExceptionWarning.hpp"
-#include "../../../Includes/Typedef.hpp"
+#include "../../../Core_modules/Typedef.hpp"
 
 
 class Parser {

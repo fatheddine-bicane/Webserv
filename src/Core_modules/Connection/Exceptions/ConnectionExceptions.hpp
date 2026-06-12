@@ -5,8 +5,7 @@
 #include <exception>
 #include <sstream>
 
-#include "colors.hpp"
-#include "Typedef.hpp"
+#include "../../Typedef.hpp"
 
 
 class ConnectionException : public std::exception {

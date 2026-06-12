@@ -6,16 +6,17 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "../config_parser/Scanner/Definitions/Scanner.hpp"
-#include "../Server_socket_multiplexing/Definitions/ServerMultiplexing.hpp"
-#include "../config_parser/Parser/Definitions/Parser.hpp"
-#include "../config_parser/Scanner/Definitions/Token.hpp"
-#include "../Server_socket_multiplexing/Definitions/ServerMultiplexing.hpp"
-#include "Connection.hpp"
-#include "ServerConnection.hpp"
-#include "ClientConnection.hpp"
-#include "ConnectionExceptions.hpp"
-#include "Typedef.hpp"
+#include "../../../Config_parser/Scanner/Definitions/Scanner.hpp"
+#include "../../../Server_multiplexing/Definitions/ServerMultiplexing.hpp"
+#include "../../../Config_parser/Parser/Definitions/Parser.hpp"
+#include "../../../Config_parser/Scanner/Definitions/Token.hpp"
+#include "../../../Server_multiplexing/Definitions/ServerMultiplexing.hpp"
+
+#include "../../Connection/Definitions/Connection.hpp"
+#include "../../Connection/Definitions/ServerConnection.hpp"
+#include "../../Connection/Definitions/ClientConnection.hpp"
+#include "../../Connection/Exceptions/ConnectionExceptions.hpp"
+#include "../../Typedef.hpp"
 
 #define MAX_EVENTS 10
 #define TIMEOUT -1
