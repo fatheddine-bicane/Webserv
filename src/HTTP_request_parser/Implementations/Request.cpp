@@ -128,14 +128,58 @@ bool	Request::malformedRequest(STATUS_CODE status_code) {
 
 
 
-void	Request::parseStartLine() {
+String	Request::consumeLine() {
 	size_t pos = getCRLFPosition();
-	// start line not complete
+	// line not complete
 	if (pos == String::npos) {
+		// line is greater than 4kb
+		if (this->_buffer.length() > 4096) {
+			malformedRequest(413); // 413 Content Too Large
+		}
+		return "";
+	}
+
+	// extract the line from the buffer
+	String line = this->_buffer.substr(0, pos);
+	// syntax error
+	if (line.empty()) {
+		if (isRequestState(START_LINE)) {
+			return "";
+		}
+
+		// TODO: if i header section mark the header section as finished
+
+		malformedRequest(400); // 400 Bad Request
+		return "";
+	}
+
+	// line contain only white spaces
+	else if (line.find_first_not_of("\t\n") == String::npos) {
+		malformedRequest(400); // 400 Bad Request
+		return "";
+	}
+
+	size_t CRLF_end_position;
+	if (this->_buffer[pos] == '\r') {
+		CRLF_end_position = 2;
+	} else {
+		CRLF_end_position = 1;
+	}
+
+	this->_buffer = this->_buffer.substr(pos + CRLF_end_position);
+
+	return line;
+}
+
+
+
+
+void	Request::parseStartLine() {
+	String start_line = consumeLine();
+	if (start_line.empty()) {
 		return;
 	}
 
-	String start_line = this->_buffer.substr(0, pos);
 	replaceBareCRWithSP(start_line);
 	trimString(start_line);
 

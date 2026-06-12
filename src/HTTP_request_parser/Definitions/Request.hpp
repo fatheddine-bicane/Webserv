@@ -66,6 +66,7 @@ private:
 	void	replaceBareCRWithSP(String& request_line);
 	void	trimString(String& string);
 	bool	malformedRequest(STATUS_CODE status_code);
+	String	consumeLine();
 
 	// INFO: parse start line
 	void	parseStartLine();
