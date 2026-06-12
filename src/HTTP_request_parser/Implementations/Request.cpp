@@ -47,40 +47,27 @@ bool	Request::isRequestState(RequestState request_state) {
 void	Request::readSocketBuffer() {
 	char	buffer[4096];
 
-	while (true) {
-		size_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
+	ssize_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
 
-		// buffer was populated append the read data to request buffer
-		if (bytes_read > 0) {
-			this->_buffer.append(buffer, bytes_read);
-		}
+	// buffer was populated append the read data to request buffer
+	if (bytes_read > 0) {
+		this->_buffer.append(buffer, bytes_read);
+	}
 
-		// client closed the connection
-		else if (bytes_read == 0) {
-			// if state complete serve request
-			// close connection
-			break;
-		}
+	// client closed the connection
+	else if (bytes_read == 0) {
+		// if state complete serve request
+		// close connection
+		return;
+	}
 
-		// an error occured: bytes_read == -1
-		else {
-			// socket read buffer is fully drained
-			// attempting to read will send the process on sleep mode
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				break;
-			}
+	// a network fatal error occured: bytes_read == -1
+	else {
+		return;
+	}
+}
 
-			// read was intrupted by a signal not data was read
-			// signal was handled (if any handler was installed)
-			// attempt to read again
-			else if (errno == EINTR) {
-				continue;
-			}
 
-			// a network fatal error close the connection
-			else {
-				break;
-			}
 		}
 	}
 }
