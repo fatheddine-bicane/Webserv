@@ -141,14 +141,14 @@ String	Request::consumeLine() {
 
 	// extract the line from the buffer
 	String line = this->_buffer.substr(0, pos);
-	// syntax error
 	if (line.empty()) {
 		if (isRequestState(START_LINE)) {
 			return LINE_NOT_READY;
+		} else if (isRequestState(HEADERS)) {
+			return CRLF;
 		}
 
-		// TODO: if i header section mark the header section as finished
-
+		// syntax error
 		malformedRequest(400); // 400 Bad Request
 		return LINE_NOT_READY;
 	}

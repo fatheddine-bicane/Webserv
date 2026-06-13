@@ -8,6 +8,7 @@
 
 #define _8KB 8192
 #define _4KB 4096
+#define CRLF "\r\n"
 #define LINE_NOT_READY "<|NOT_READY|>"
 
 class ClientConnection;
