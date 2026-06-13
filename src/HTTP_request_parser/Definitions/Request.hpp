@@ -3,6 +3,8 @@
 #include <map>
 #include <sys/socket.h>
 #include <cerrno>
+#include <algorithm>
+#include <cctype>
 
 #include "../../Core_modules/Typedef.hpp"
 
@@ -10,6 +12,8 @@
 #define _4KB 4096
 #define CRLF "\r\n"
 #define LINE_NOT_READY "<|NOT_READY|>"
+#define WHITE_SPACES "\t "
+#define BAD_VALUE "<|BAD_VALUE|>"
 
 class ClientConnection;
 
@@ -77,5 +81,10 @@ private:
 	bool	parseMethod(String& start_line);
 	bool	parseTargetResource(String& start_line);
 	bool	parseHTTPVersion(String& start_line);
+
+	// INFO: parse headers
+	void	parseFieldLine();
+	String	parseFieldName(String& start_line);
+	String	parseFieldValue(String& start_line);
 
 };

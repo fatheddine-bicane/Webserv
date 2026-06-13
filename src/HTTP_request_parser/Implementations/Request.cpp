@@ -24,6 +24,7 @@ void	Request::attemptRequestParse() {
 	while (isRequestState(INCOMPLETE)) {
 		switch (this->_state) {
 			case START_LINE: parseStartLine(); break;
+			case HEADERS: parseFieldLine(); break;
 
 			default: break;
 		}
@@ -154,7 +155,7 @@ String	Request::consumeLine() {
 	}
 
 	// line contain only white spaces
-	else if (line.find_first_not_of("\t\n") == String::npos) {
+	else if (line.find_first_not_of(WHITE_SPACES) == String::npos) {
 		malformedRequest(400); // 400 Bad Request
 		return LINE_NOT_READY;
 	}
@@ -269,5 +270,67 @@ bool	Request::parseHTTPVersion(String& HTTP_version) {
 	return true;
 }
 
+
+
+
+void	Request::parseFieldLine() {
+	String field_line = consumeLine();
+	if (field_line == LINE_NOT_READY) {
+		return;
+	} else if (field_line == CRLF) {
+		// TODO: check headers for content length or cuncks to read body
+		// and change the request state
+		return;
+	}
+
+	replaceBareCRWithSP(field_line);
+
+	if (field_line[0] == '\t' || field_line[0] == ' ') {
+		malformedRequest(400); // 400 Bad Request
+		return;
+	}
+
+	String field_name = parseFieldName(field_line);
+	if (field_name == BAD_VALUE) {
+		return;
+	}
+
+	String field_value = parseFieldValue(field_line);
+
+	this->headers[field_name] = field_value;
+}
+
+
+
+
+String	Request::parseFieldName(String& start_line) {
+	size_t pos = start_line.find(':');
+	if (pos == String::npos) {
+		malformedRequest(400); // 400 Bad Request
+		return BAD_VALUE;
+	}
+
+	String field_name = start_line.substr(0, pos);
+	if (field_name.find_last_of(WHITE_SPACES) != String::npos) {
+		malformedRequest(400); // 400 Bad Request
+		return BAD_VALUE;
+	}
+
+	// convert field-name to lowercase for lookups later on
+	std::for_each(field_name.begin(), field_name.end(), tolower);
+
+	return field_name;
+}
+
+
+
+String	Request::parseFieldValue(String& start_line) {
+	size_t pos = start_line.find(':');
+
+	String field_value = start_line.substr(pos + 1);
+	trimString(field_value);
+
+	return field_value;
+}
 
 // --------------------------------------------
