@@ -51,7 +51,7 @@ bool	Request::isRequestState(RequestState request_state) {
 // --------------------------------------------
 
 void	Request::readSocketBuffer() {
-	char	buffer[4096];
+	char	buffer[_4KB + 1];
 
 	ssize_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
 
@@ -133,7 +133,7 @@ String	Request::consumeLine() {
 	// line not complete
 	if (pos == String::npos) {
 		// line is greater than 4kb
-		if (this->_buffer.length() > 4096) {
+		if (this->_buffer.length() > _8KB) {
 			malformedRequest(413); // 413 Content Too Large
 		}
 		return "";

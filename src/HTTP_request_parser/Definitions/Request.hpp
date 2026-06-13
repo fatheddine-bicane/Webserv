@@ -6,6 +6,8 @@
 
 #include "../../Core_modules/Typedef.hpp"
 
+#define _8KB 8192
+#define _4KB 4096
 
 class ClientConnection;
 
