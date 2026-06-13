@@ -65,9 +65,22 @@ public:
 	bool	isRequestState(RequestState request_state);
 
 
+private:
+	// INFO: parse request helpers
+	void	parseStartLine();
+	void	parseFieldLine();
 
 
 private:
+	// INFO: parse start line helpers
+	bool	parseMethod(String& start_line);
+	bool	parseTargetResource(String& start_line);
+	bool	parseHTTPVersion(String& start_line);
+
+	// INFO: parse headers helpers
+	String	parseFieldName(String& start_line);
+	String	parseFieldValue(String& start_line);
+
 	// INFO: helper functions
 	void	readSocketBuffer();
 	size_t	getCRLFPosition();
@@ -75,16 +88,5 @@ private:
 	void	trimString(String& string);
 	bool	malformedRequest(STATUS_CODE status_code);
 	String	consumeLine();
-
-	// INFO: parse start line
-	void	parseStartLine();
-	bool	parseMethod(String& start_line);
-	bool	parseTargetResource(String& start_line);
-	bool	parseHTTPVersion(String& start_line);
-
-	// INFO: parse headers
-	void	parseFieldLine();
-	String	parseFieldName(String& start_line);
-	String	parseFieldValue(String& start_line);
 
 };

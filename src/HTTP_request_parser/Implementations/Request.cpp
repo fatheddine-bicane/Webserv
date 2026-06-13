@@ -48,133 +48,9 @@ bool	Request::isRequestState(RequestState request_state) {
 
 
 
-// INFO: helper functions
 // --------------------------------------------
 
-void	Request::readSocketBuffer() {
-	char	buffer[_4KB + 1];
-
-	ssize_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
-
-	// buffer was populated append the read data to request buffer
-	if (bytes_read > 0) {
-		this->_buffer.append(buffer, bytes_read);
-	}
-
-	// client closed the connection
-	else if (bytes_read == 0) {
-		// if state complete serve request
-		// close connection
-		this->_client_connection->state = CLOSE;
-		return;
-	}
-
-	// a network fatal error occured: bytes_read == -1
-	else {
-		this->_client_connection->state = CLOSE;
-		return;
-	}
-}
-
-
-
-
-size_t	Request::getCRLFPosition() {
-	size_t pos = this->_buffer.find("\r\n");
-
-	// accept a single LF as line terminator
-	if (pos == String::npos) {
-		pos = this->_buffer.find("\n");
-	}
-
-	return pos;
-}
-
-
-
-
-void	Request::replaceBareCRWithSP(String& request_line) {
-	String::iterator it = request_line.begin();
-	String::iterator end = request_line.end();
-
-	for (; it != end; it++) {
-		if (*it == '\r') {
-			*it = ' ';
-		}
-	}
-}
-
-
-
-void	Request::trimString(String& string) {
-	// trim right
-	size_t end = string.find_last_not_of(' ');
-	if (end != String::npos) {
-		string.erase(end + 1);
-	}
-
-	// trim left
-	size_t start = string.find_first_not_of(' ');
-	if (start != String::npos) {
-		string.erase(0, start);
-	}
-}
-
-
-bool	Request::malformedRequest(STATUS_CODE status_code) {
-	this->status_code = status_code;
-	this->_state = MALFORMED;
-	return false;
-}
-
-
-
-String	Request::consumeLine() {
-	size_t pos = getCRLFPosition();
-	// line not complete
-	if (pos == String::npos) {
-		// line is greater than 4kb
-		if (this->_buffer.length() > _8KB) {
-			malformedRequest(413); // 413 Content Too Large
-		}
-		return LINE_NOT_READY;
-	}
-
-	// extract the line from the buffer
-	String line = this->_buffer.substr(0, pos);
-	if (line.empty()) {
-		if (isRequestState(START_LINE)) {
-			return LINE_NOT_READY;
-		} else if (isRequestState(HEADERS)) {
-			return CRLF;
-		}
-
-		// syntax error
-		malformedRequest(400); // 400 Bad Request
-		return LINE_NOT_READY;
-	}
-
-	// line contain only white spaces
-	else if (line.find_first_not_of(WHITE_SPACES) == String::npos) {
-		malformedRequest(400); // 400 Bad Request
-		return LINE_NOT_READY;
-	}
-
-	size_t CRLF_end_position;
-	if (this->_buffer[pos] == '\r') {
-		CRLF_end_position = 2;
-	} else {
-		CRLF_end_position = 1;
-	}
-
-	this->_buffer = this->_buffer.substr(pos + CRLF_end_position);
-
-	return line;
-}
-
-
-
-
+// INFO: parse request helpers
 void	Request::parseStartLine() {
 	String start_line = consumeLine();
 	if (start_line == LINE_NOT_READY) {
@@ -190,7 +66,36 @@ void	Request::parseStartLine() {
 	this->_state = HEADERS;
 }
 
+void	Request::parseFieldLine() {
+	String field_line = consumeLine();
+	if (field_line == LINE_NOT_READY) {
+		return;
+	} else if (field_line == CRLF) {
+		// TODO: check headers for content length or cuncks to read body
+		// and change the request state
+		return;
+	}
 
+	replaceBareCRWithSP(field_line);
+
+	if (field_line[0] == '\t' || field_line[0] == ' ') {
+		malformedRequest(400); // 400 Bad Request
+		return;
+	}
+
+	String field_name = parseFieldName(field_line);
+	if (field_name == BAD_VALUE) {
+		return;
+	}
+
+	String field_value = parseFieldValue(field_line);
+
+	this->headers[field_name] = field_value;
+}
+
+
+
+// INFO: parse start line helpers
 
 bool	Request::parseMethod(String& start_line) {
 	size_t pos = start_line.find(' ');
@@ -272,36 +177,7 @@ bool	Request::parseHTTPVersion(String& HTTP_version) {
 
 
 
-
-void	Request::parseFieldLine() {
-	String field_line = consumeLine();
-	if (field_line == LINE_NOT_READY) {
-		return;
-	} else if (field_line == CRLF) {
-		// TODO: check headers for content length or cuncks to read body
-		// and change the request state
-		return;
-	}
-
-	replaceBareCRWithSP(field_line);
-
-	if (field_line[0] == '\t' || field_line[0] == ' ') {
-		malformedRequest(400); // 400 Bad Request
-		return;
-	}
-
-	String field_name = parseFieldName(field_line);
-	if (field_name == BAD_VALUE) {
-		return;
-	}
-
-	String field_value = parseFieldValue(field_line);
-
-	this->headers[field_name] = field_value;
-}
-
-
-
+// INFO: parse headers helpers
 
 String	Request::parseFieldName(String& start_line) {
 	size_t pos = start_line.find(':');
@@ -331,6 +207,129 @@ String	Request::parseFieldValue(String& start_line) {
 	trimString(field_value);
 
 	return field_value;
+}
+
+
+
+// INFO: helper functions
+
+void	Request::readSocketBuffer() {
+	char	buffer[_4KB + 1];
+
+	ssize_t bytes_read = recv(this->_fd, buffer, sizeof(buffer), 0);
+
+	// buffer was populated append the read data to request buffer
+	if (bytes_read > 0) {
+		this->_buffer.append(buffer, bytes_read);
+	}
+
+	// client closed the connection
+	else if (bytes_read == 0) {
+		// if state complete serve request
+		// close connection
+		this->_client_connection->state = CLOSE;
+		return;
+	}
+
+	// a network fatal error occured: bytes_read == -1
+	else {
+		this->_client_connection->state = CLOSE;
+		return;
+	}
+}
+
+
+
+size_t	Request::getCRLFPosition() {
+	size_t pos = this->_buffer.find("\r\n");
+
+	// accept a single LF as line terminator
+	if (pos == String::npos) {
+		pos = this->_buffer.find("\n");
+	}
+
+	return pos;
+}
+
+
+
+void	Request::replaceBareCRWithSP(String& request_line) {
+	String::iterator it = request_line.begin();
+	String::iterator end = request_line.end();
+
+	for (; it != end; it++) {
+		if (*it == '\r') {
+			*it = ' ';
+		}
+	}
+}
+
+
+
+void	Request::trimString(String& string) {
+	// trim right
+	size_t end = string.find_last_not_of(' ');
+	if (end != String::npos) {
+		string.erase(end + 1);
+	}
+
+	// trim left
+	size_t start = string.find_first_not_of(' ');
+	if (start != String::npos) {
+		string.erase(0, start);
+	}
+}
+
+
+bool	Request::malformedRequest(STATUS_CODE status_code) {
+	this->status_code = status_code;
+	this->_state = MALFORMED;
+	return false;
+}
+
+
+
+String	Request::consumeLine() {
+	size_t pos = getCRLFPosition();
+	// line not complete
+	if (pos == String::npos) {
+		// line is greater than 4kb
+		if (this->_buffer.length() > _8KB) {
+			malformedRequest(413); // 413 Content Too Large
+		}
+		return LINE_NOT_READY;
+	}
+
+	// extract the line from the buffer
+	String line = this->_buffer.substr(0, pos);
+	if (line.empty()) {
+		if (isRequestState(START_LINE)) {
+			return LINE_NOT_READY;
+		} else if (isRequestState(HEADERS)) {
+			return CRLF;
+		}
+
+		// syntax error
+		malformedRequest(400); // 400 Bad Request
+		return LINE_NOT_READY;
+	}
+
+	// line contain only white spaces
+	else if (line.find_first_not_of(WHITE_SPACES) == String::npos) {
+		malformedRequest(400); // 400 Bad Request
+		return LINE_NOT_READY;
+	}
+
+	size_t CRLF_end_position;
+	if (this->_buffer[pos] == '\r') {
+		CRLF_end_position = 2;
+	} else {
+		CRLF_end_position = 1;
+	}
+
+	this->_buffer = this->_buffer.substr(pos + CRLF_end_position);
+
+	return line;
 }
 
 // --------------------------------------------
