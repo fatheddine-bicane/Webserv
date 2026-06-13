@@ -136,7 +136,7 @@ String	Request::consumeLine() {
 		if (this->_buffer.length() > _8KB) {
 			malformedRequest(413); // 413 Content Too Large
 		}
-		return "";
+		return LINE_NOT_READY;
 	}
 
 	// extract the line from the buffer
@@ -144,19 +144,19 @@ String	Request::consumeLine() {
 	// syntax error
 	if (line.empty()) {
 		if (isRequestState(START_LINE)) {
-			return "";
+			return LINE_NOT_READY;
 		}
 
 		// TODO: if i header section mark the header section as finished
 
 		malformedRequest(400); // 400 Bad Request
-		return "";
+		return LINE_NOT_READY;
 	}
 
 	// line contain only white spaces
 	else if (line.find_first_not_of("\t\n") == String::npos) {
 		malformedRequest(400); // 400 Bad Request
-		return "";
+		return LINE_NOT_READY;
 	}
 
 	size_t CRLF_end_position;
@@ -176,7 +176,7 @@ String	Request::consumeLine() {
 
 void	Request::parseStartLine() {
 	String start_line = consumeLine();
-	if (start_line.empty()) {
+	if (start_line == LINE_NOT_READY) {
 		return;
 	}
 
