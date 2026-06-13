@@ -14,7 +14,5 @@ public:
 	ConnectionState	state;
 
 public:
-	ClientConnection(SOCKET fd)
-	: Connection(CLIENT_S, fd),
-	  request(fd, this) {}
+	ClientConnection(SOCKET fd);
 };
