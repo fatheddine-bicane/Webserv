@@ -53,7 +53,7 @@ bool	Request::isRequestState(RequestState request_state) {
 // INFO: parse request helpers
 void	Request::parseStartLine() {
 	String start_line = consumeLine();
-	if (start_line == LINE_NOT_READY) {
+	if (start_line == LINE_NOT_READY || start_line == BAD_VALUE) {
 		return;
 	}
 
@@ -296,6 +296,7 @@ String	Request::consumeLine() {
 		// line is greater than 4kb
 		if (this->_buffer.length() > _8KB) {
 			malformedRequest(413); // 413 Content Too Large
+			return BAD_VALUE;
 		}
 		return LINE_NOT_READY;
 	}
@@ -311,13 +312,13 @@ String	Request::consumeLine() {
 
 		// syntax error
 		malformedRequest(400); // 400 Bad Request
-		return LINE_NOT_READY;
+		return BAD_VALUE;
 	}
 
 	// line contain only white spaces
 	else if (line.find_first_not_of(WHITE_SPACES) == String::npos) {
 		malformedRequest(400); // 400 Bad Request
-		return LINE_NOT_READY;
+		return BAD_VALUE;
 	}
 
 	size_t CRLF_end_position;
