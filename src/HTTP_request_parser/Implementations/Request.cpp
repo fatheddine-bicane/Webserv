@@ -181,7 +181,6 @@ void	Request::parseStartLine() {
 	}
 
 	replaceBareCRWithSP(start_line);
-	trimString(start_line);
 
 	if (!parseMethod(start_line)) return;
 	if (!parseTargetResource(start_line)) return;
