@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <map>
 #include <sys/socket.h>
 #include <cerrno>
@@ -7,6 +8,11 @@
 #include <cctype>
 #include <string>
 #include <unistd.h>
+#include <cctype>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iostream>
 
 #include "../../Core_modules/Typedef.hpp"
 #include "../../Config_parser/Parser/Definitions/Directives.hpp"
@@ -53,7 +59,9 @@ public:
 	String						HTTP_version;
 	// headers
 	Headers						headers;
-	// TODO:body handling to be determined
+	// body
+	String						tmp_body_file_name;
+	std::ofstream				tmp_body_file;
 
 	STATUS_CODE			status_code;
 
@@ -86,6 +94,7 @@ private:
 	String	parseFieldValue(String& start_line);
 
 	// INFO: parse body helpers
+	bool	openTmpBodyFile();
 
 	// INFO: helper functions
 	void	readSocketBuffer();
@@ -97,6 +106,7 @@ private:
 	bool	linkServerObject();
 	bool	transferEncodingPresent();
 	bool	contentLengthPresent();
+	String	generateRandomFileName();
 
 
 

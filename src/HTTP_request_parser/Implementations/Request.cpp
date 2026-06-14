@@ -79,10 +79,7 @@ void	Request::parseFieldLine() {
 
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
-		else if (!transferEncodingPresent() || !contentLengthPresent()) {
-			this->_state = COMPLETE;
-			return;
-		}
+
 
 		// a body is present change state to parse body
 		else {
@@ -118,12 +115,22 @@ void	Request::parseBody() {
 	// a request cannot contain both transfer-encoding and content-length,
 	// allowing the existance of both headers leads to desyncing the 
 	// server and proxy.(protecting against is just a good practice)
-	if (this->headers.find("transfer-encoding") != this->headers.end()
-		&& this->headers.find("content-length") != this->headers.end()) {
+	if (transferEncodingPresent() && contentLengthPresent()) {
 		malformedRequest(400); // 400 Bad Request
 	}
 
-	if (!linkServerObject()) return;
+	// open tmp file
+	if (!openTmpBodyFile()) return;
+
+	if (transferEncodingPresent()) {
+		// handle
+	} else if (contentLengthPresent()) {
+		// handle
+	}
+
+	// WARNING: close the tmp body file
+	this->tmp_body_file.close();
+
 }
 
 
@@ -240,6 +247,23 @@ String	Request::parseFieldValue(String& start_line) {
 	trimString(field_value);
 
 	return field_value;
+}
+
+
+
+
+// INFO: parse body helpers
+bool	Request::openTmpBodyFile() {
+	String file_name = generateRandomFileName();
+	String& tmp_path = this->_connection->server->shared_directives.client_body_temp_path;
+	this->tmp_body_file_name = "./" + tmp_path + "/" + file_name;
+
+	this->tmp_body_file.open(this->tmp_body_file_name.c_str());
+	if (!this->tmp_body_file.is_open()) {
+		return malformedRequest(500); // 500 Internal Server Error
+	}
+
+	return true;
 }
 
 
@@ -371,6 +395,26 @@ String	Request::consumeLine() {
 
 
 
+bool	Request::transferEncodingPresent() {
+	if (this->headers.find("transfer-encoding") != this->headers.end()) {
+		return true;
+	}
+
+	return false;
+}
+
+
+
+bool	Request::contentLengthPresent() {
+	if (this->headers.find("content-length") != this->headers.end()) {
+		return true;
+	}
+
+	return false;
+}
+
+
+
 bool	Request::linkServerObject() {
 
 	if (this->_connection->server != NULL) {
@@ -421,5 +465,26 @@ bool	Request::linkServerObject() {
 	return true;
 }
 
+
+
+String	Request::generateRandomFileName() {
+	// seed the rand() engine
+	std::srand(std::time(NULL));
+
+	// define allowed characters
+	const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+						   "abcdefghijklmnopqrstuvwxyz"
+						   "0123456789";
+
+	int max_index = sizeof(charset) - 1;
+
+	String file_name;
+	for (int i = 0; i < 20; i++) {
+		// generate a random index and append the character at that index
+		file_name += charset[std::rand() % max_index];
+	}
+
+	return file_name;
+}
 
 // --------------------------------------------
