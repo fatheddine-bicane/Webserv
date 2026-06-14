@@ -6,7 +6,7 @@
 
 Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_fd = fd;
-	this->_client_connection = client_connection;
+	this->_connection = client_connection;
 	this->_state = START_LINE;
 }
 
@@ -260,13 +260,13 @@ void	Request::readSocketBuffer() {
 	else if (bytes_read == 0) {
 		// if state complete serve request
 		// close connection
-		this->_client_connection->state = CLOSE;
+		this->_connection->state = CLOSE;
 		return;
 	}
 
 	// a network fatal error occured: bytes_read == -1
 	else {
-		this->_client_connection->state = CLOSE;
+		this->_connection->state = CLOSE;
 		return;
 	}
 }
@@ -370,7 +370,7 @@ String	Request::consumeLine() {
 
 bool	Request::linkServerObject() {
 
-	if (this->_client_connection->server != NULL) {
+	if (this->_connection->server != NULL) {
 		return true;
 	}
 
@@ -399,8 +399,8 @@ bool	Request::linkServerObject() {
 
 	// get the servers maped to the socket this client
 	// was connected through
-	String& ip_port = this->_client_connection->ip_port;
-	Servers::iterator ip_port_servers = this->_client_connection->servers.find(ip_port);
+	String& ip_port = this->_connection->ip_port;
+	Servers::iterator ip_port_servers = this->_connection->servers.find(ip_port);
 
 	// find the server block mapped to the socket and the hostname
 	std::map<String, Server>::iterator server;
@@ -414,7 +414,7 @@ bool	Request::linkServerObject() {
 
 
 	// assign the connection server pointer to the correct server block
-	this->_client_connection->server = &server->second;
+	this->_connection->server = &server->second;
 	return true;
 }
 

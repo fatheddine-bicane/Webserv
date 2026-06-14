@@ -42,7 +42,7 @@ private:
 	RequestState		_state;
 	SOCKET				_fd;
 	String				_buffer;
-	ClientConnection*	_client_connection;
+	ClientConnection*	_connection;
 	
 
 public:
