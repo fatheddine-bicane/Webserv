@@ -74,10 +74,21 @@ void	Request::parseFieldLine() {
 	if (field_line == LINE_NOT_READY) {
 		return;
 	} else if (field_line == CRLF) {
-		// TODO: check headers for content length or cuncks to read body
-		// and change the request state
-		this->_state = BODY;
-		return;
+		// link the server object
+		if (!linkServerObject()) return;
+
+		// if no content length or encoding header was sent
+		// then the request dosent contain body and its complete
+		else if (!transferEncodingPresent() || !contentLengthPresent()) {
+			this->_state = COMPLETE;
+			return;
+		}
+
+		// a body is present change state to parse body
+		else {
+			this->_state = BODY;
+			return;
+		}
 	}
 
 	replaceBareCRWithSP(field_line);

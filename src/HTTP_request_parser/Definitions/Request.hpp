@@ -95,6 +95,8 @@ private:
 	bool	malformedRequest(STATUS_CODE status_code);
 	String	consumeLine();
 	bool	linkServerObject();
+	bool	transferEncodingPresent();
+	bool	contentLengthPresent();
 
 
 
