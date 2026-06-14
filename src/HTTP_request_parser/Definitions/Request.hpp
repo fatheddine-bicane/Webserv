@@ -49,7 +49,7 @@ public:
 	String						target_resource;
 	String						HTTP_version;
 	// headers
-	std::map<String, String>	headers;
+	Headers						headers;
 	// TODO:body handling to be determined
 
 	STATUS_CODE			status_code;
