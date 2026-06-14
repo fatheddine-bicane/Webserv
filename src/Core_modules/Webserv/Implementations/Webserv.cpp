@@ -59,7 +59,10 @@ void	Webserv::addNewClientConnection(Connection* connection) {
 		throw SystemCallsFailedException("fcntl()");
     }
 
-	ClientConnection* client_connection = new ClientConnection(client_socket);
+	String& ip_port = this->sockets_map->at(connection->fd);
+	ClientConnection* client_connection = new ClientConnection(client_socket,
+															   ip_port,
+															   *this->servers);
 	struct epoll_event event;
 	event.events = EPOLLIN;
 	event.data.ptr = client_connection;

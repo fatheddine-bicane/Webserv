@@ -12,7 +12,10 @@ class ClientConnection : public Connection{
 public:
 	Request			request;
 	ConnectionState	state;
+	Server*			server;
+	String&	ip_port;
+	Servers&	servers;
 
 public:
-	ClientConnection(SOCKET fd);
+	ClientConnection(SOCKET fd, String& ip_port, Servers& servers);
 };
