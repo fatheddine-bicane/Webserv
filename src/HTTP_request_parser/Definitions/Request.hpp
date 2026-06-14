@@ -5,8 +5,11 @@
 #include <cerrno>
 #include <algorithm>
 #include <cctype>
+#include <string>
+#include <unistd.h>
 
 #include "../../Core_modules/Typedef.hpp"
+#include "../../Config_parser/Parser/Definitions/Directives.hpp"
 
 #define _8KB 8192
 #define _4KB 4096
@@ -69,6 +72,7 @@ private:
 	// INFO: parse request helpers
 	void	parseStartLine();
 	void	parseFieldLine();
+	void	parseBody();
 
 
 private:
@@ -81,6 +85,8 @@ private:
 	String	parseFieldName(String& start_line);
 	String	parseFieldValue(String& start_line);
 
+	// INFO: parse body helpers
+
 	// INFO: helper functions
 	void	readSocketBuffer();
 	size_t	getCRLFPosition();
@@ -88,5 +94,8 @@ private:
 	void	trimString(String& string);
 	bool	malformedRequest(STATUS_CODE status_code);
 	String	consumeLine();
+	bool	linkServerObject();
+
+
 
 };

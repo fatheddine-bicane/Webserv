@@ -25,6 +25,7 @@ void	Request::attemptRequestParse() {
 		switch (this->_state) {
 			case START_LINE: parseStartLine(); break;
 			case HEADERS: parseFieldLine(); break;
+			case BODY: parseBody(); break;
 
 			default: break;
 		}
@@ -66,6 +67,8 @@ void	Request::parseStartLine() {
 	this->_state = HEADERS;
 }
 
+
+
 void	Request::parseFieldLine() {
 	String field_line = consumeLine();
 	if (field_line == LINE_NOT_READY) {
@@ -73,6 +76,7 @@ void	Request::parseFieldLine() {
 	} else if (field_line == CRLF) {
 		// TODO: check headers for content length or cuncks to read body
 		// and change the request state
+		this->_state = BODY;
 		return;
 	}
 
@@ -91,6 +95,24 @@ void	Request::parseFieldLine() {
 	String field_value = parseFieldValue(field_line);
 
 	this->headers[field_name] = field_value;
+}
+
+
+
+// WARNING:
+// A server that receives a request message with a
+// transfer coding it does not understand SHOULD
+// respond with 501 (Not Implemented).
+void	Request::parseBody() {
+	// a request cannot contain both transfer-encoding and content-length,
+	// allowing the existance of both headers leads to desyncing the 
+	// server and proxy.(protecting against is just a good practice)
+	if (this->headers.find("transfer-encoding") != this->headers.end()
+		&& this->headers.find("content-length") != this->headers.end()) {
+		malformedRequest(400); // 400 Bad Request
+	}
+
+	if (!linkServerObject()) return;
 }
 
 
@@ -332,5 +354,58 @@ String	Request::consumeLine() {
 
 	return line;
 }
+
+
+
+bool	Request::linkServerObject() {
+
+	if (this->_client_connection->server != NULL) {
+		return true;
+	}
+
+
+	Headers::iterator host_field = this->headers.find("host");
+
+	float HTTP_version = static_cast<float>(std::atof(this->HTTP_version.c_str()));
+	String host_value;
+	if (host_field == this->headers.end()) {
+		// including the host field in HTTP 1.0 is optional
+		// if its HTTP 1.0 use default server
+		if (HTTP_version > 1.0f) {
+			return malformedRequest(400); // 400 Bad Request
+		} else {
+			host_value = "default";
+		}
+	} else {
+		// NOTE: a hostname field value will always contain
+		// host:port combination, since this program cannot
+		// run and listen on privlaged ports-- 1->1023.
+
+		// extract the first part of the hostname value
+		size_t pos = host_field->second.find(':');
+		host_value = host_field->second.substr(0, pos);
+	}
+
+	// get the servers maped to the socket this client
+	// was connected through
+	String& ip_port = this->_client_connection->ip_port;
+	Servers::iterator ip_port_servers = this->_client_connection->servers.find(ip_port);
+
+	// find the server block mapped to the socket and the hostname
+	std::map<String, Server>::iterator server;
+	server = ip_port_servers->second.find(host_value);
+
+	// if not found and the there was no server defined
+	// with 'default' as its host name, then use the first server
+	if (server == ip_port_servers->second.end()) {
+		server = ip_port_servers->second.begin();
+	}
+
+
+	// assign the connection server pointer to the correct server block
+	this->_client_connection->server = &server->second;
+	return true;
+}
+
 
 // --------------------------------------------
