@@ -340,12 +340,15 @@ String	Request::consumeLine() {
 		if (isRequestState(START_LINE)) {
 			return LINE_NOT_READY;
 		} else if (isRequestState(HEADERS)) {
-			return CRLF;
+			// return that a line is CRLF only
+			line = CRLF;
 		}
 
 		// syntax error
-		malformedRequest(400); // 400 Bad Request
-		return BAD_VALUE;
+		else {
+			malformedRequest(400); // 400 Bad Request
+			return BAD_VALUE;
+		}
 	}
 
 	// line contain only white spaces
@@ -354,13 +357,13 @@ String	Request::consumeLine() {
 		return BAD_VALUE;
 	}
 
+	// truncate buffer
 	size_t CRLF_end_position;
 	if (this->_buffer[pos] == '\r') {
 		CRLF_end_position = 2;
 	} else {
 		CRLF_end_position = 1;
 	}
-
 	this->_buffer = this->_buffer.substr(pos + CRLF_end_position);
 
 	return line;
