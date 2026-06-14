@@ -193,7 +193,7 @@ String	Request::parseFieldName(String& start_line) {
 	}
 
 	// convert field-name to lowercase for lookups later on
-	std::for_each(field_name.begin(), field_name.end(), tolower);
+	std::transform(field_name.begin(), field_name.end(), field_name.begin(), ::tolower);
 
 	return field_name;
 }
