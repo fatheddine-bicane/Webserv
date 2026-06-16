@@ -1,5 +1,8 @@
 #include "../Definitions/Request.hpp"
 #include "../../Core_modules/Connection/Definitions/ClientConnection.hpp"
+#include <cstddef>
+#include <cstdlib>
+#include <string>
 
 // INFO: constructor
 // --------------------------------------------
@@ -25,6 +28,9 @@ void	Request::attemptRequestParse() {
 		switch (this->_state) {
 			case START_LINE: parseStartLine(); break;
 			case HEADERS: parseFieldLine(); break;
+			case DETERMINING_MESSAGE_BODY_LENGTH:
+				determiningMessageBodyLength();
+				break;
 			case BODY: parseBody(); break;
 
 			default: break;
@@ -38,6 +44,7 @@ bool	Request::isRequestState(RequestState request_state) {
 	if (request_state == INCOMPLETE) {
 		return (this->_state == START_LINE
 				|| this->_state == HEADERS
+				|| this->_state == DETERMINING_MESSAGE_BODY_LENGTH
 				|| this->_state == BODY);
 	}
 
@@ -80,10 +87,15 @@ void	Request::parseFieldLine() {
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
 
+		// WARNING: debug
+		// else if (!transferEncodingPresent() || !contentLengthPresent()) {
+		// 	this->_state = COMPLETE;
+		// 	return;
+		// }
 
 		// a body is present change state to parse body
 		else {
-			this->_state = BODY;
+			this->_state = DETERMINING_MESSAGE_BODY_LENGTH;
 			return;
 		}
 	}
@@ -107,14 +119,7 @@ void	Request::parseFieldLine() {
 
 
 
-// WARNING:
-// A server that receives a request message with a
-// transfer coding it does not understand SHOULD
-// respond with 501 (Not Implemented).
-void	Request::parseBody() {
-	// a request cannot contain both transfer-encoding and content-length,
-	// allowing the existance of both headers leads to desyncing the 
-	// server and proxy.(protecting against is just a good practice)
+void	Request::determiningMessageBodyLength() {
 	if (transferEncodingPresent() && contentLengthPresent()) {
 		malformedRequest(400); // 400 Bad Request
 	}
@@ -123,14 +128,33 @@ void	Request::parseBody() {
 	if (!openTmpBodyFile()) return;
 
 	if (transferEncodingPresent()) {
-		// handle
+		if (!defineTransferEncoding()) return;
+	} else if (contentLengthPresent()) {
+		if (!defineConetentLength()) return;
+	}
+
+	this->_state = BODY;
+}
+
+
+
+
+
+
+
+void	Request::parseBody() {
+	if (transferEncodingPresent()) {
+		readBodyWithTransferEncoding();
 	} else if (contentLengthPresent()) {
 		// handle
 	}
 
-	// WARNING: close the tmp body file
-	this->tmp_body_file.close();
 
+	// WARNING: close the tmp body file if the request
+	// body was received completely
+	if (this->_state != BODY) {
+		this->tmp_body_file.close();
+	}
 }
 
 
@@ -264,6 +288,140 @@ bool	Request::openTmpBodyFile() {
 	}
 
 	return true;
+}
+
+
+
+bool	Request::defineTransferEncoding() {
+	String& transfer_encoding = this->headers.at("transfer-encoding");
+
+	// deny any encoding not implemented by the server
+	if (transfer_encoding != "chunked") {
+		return malformedRequest(501); // 501 Not Implemented
+	}
+
+	return true;
+}
+
+
+
+bool	Request::defineConetentLength() {
+	// get body length
+	String& body_length_str = this->headers.at("content-length");
+	char* end = NULL;
+	long body_length = std::strtol(body_length_str.c_str(), &end, 10);
+	if (*end != '\0') {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	// check if the length is more than the allowed
+	long client_max_body_size =
+		this->_connection->server->shared_directives.client_max_body_size;
+	if (body_length > client_max_body_size) {
+		return malformedRequest(413); // 413 Content Too Large
+	}
+
+	this->_body_length = body_length;
+	this->_mesage_body_length = CONTENT_LENGTH;
+
+	return true;
+}
+
+
+
+void	Request::readBodyWithTransferEncoding() {
+	int buffer_size = this->_buffer.size();
+	(void)buffer_size;
+	// forward declaration for the goto statement
+	// int buffer_size;
+
+	if (this->_expect_CRLF) goto expect_CRLF;
+
+	if (this->_chunk_read && !getChunckSize()) return;
+
+	// buffer_size = this->_buffer.size();
+
+	// if the buffer contains the chunk size of data
+	if (this->_buffer.size() >= this->_chunk_size) {
+		this->tmp_body_file.write(this->_buffer.c_str(), this->_chunk_size);
+		this->_buffer = this->_buffer.substr(this->_chunk_size);
+
+		this->_expect_CRLF = true;
+
+		if (this->_buffer.size() == 0) {
+			return;
+		}
+
+		// check if the CRLF is not fully received in the buffer in case
+		// of '\r\n' as a CRLF
+		else if (this->_buffer.size() == 1 && this->_buffer[0] == '\r') {
+			return;
+		}
+
+	expect_CRLF:
+		if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
+			this->_buffer.erase(0, 2);
+		} else if (this->_buffer[0] == '\n') {
+			this->_buffer.erase(0, 1);
+		} else {
+			malformedRequest(400); // 400 Bad Request
+			return;
+		}
+
+		this->_chunk_read = true;
+		this->_expect_CRLF = false;
+	} else {
+		this->tmp_body_file.write(this->_buffer.c_str(), this->_buffer.size());
+		this->_chunk_size -= this->_buffer.size();
+	}
+}
+
+
+
+bool	Request::getChunckSize() {
+	// consume the chunk metadata line
+	size_t pos = this->_buffer.find(CRLF);
+	this->_CRLF_end_position = 2;
+	if (pos == String::npos) {
+		pos = this->_buffer.find('\n');
+		if (pos == String::npos) {
+			return false;
+		}
+		this->_CRLF_end_position = 1;
+	}
+	String chunk_size_str = this->_buffer.substr(0, pos);
+	this->_buffer = this->_buffer.substr(pos + this->_CRLF_end_position);
+
+	// ignore any metadata other than chunk size
+	pos = chunk_size_str.find(';');
+	if (pos != String::npos) {
+		chunk_size_str = chunk_size_str.substr(0, pos);
+	}
+
+	// get the chunk size
+	char* end = NULL;
+	this->_chunk_size = std::strtol(chunk_size_str.c_str(), &end, 16);
+	if (*end != '\0') {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	// this is the last chunk
+	if (this->_chunk_size == 0) {
+		this->_buffer = this->_buffer.substr(pos + this->_CRLF_end_position);
+		this->_state = COMPLETE;
+		return false;
+	}
+
+	this->_chunk_read = false;
+	return true;
+}
+
+
+
+
+
+void	Request::readBodyWithContentLengt() {
+
 }
 
 

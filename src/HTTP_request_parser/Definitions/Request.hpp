@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <fstream>
 #include <map>
 #include <sys/socket.h>
@@ -30,6 +31,8 @@ enum RequestState {
 	// parse ongoing
 	INCOMPLETE,
 	START_LINE, HEADERS, BODY,
+	// determining the BODY reading method
+	DETERMINING_MESSAGE_BODY_LENGTH,
 	// request parsed and its correct
 	COMPLETE,
 	// request parsed and its not correct
@@ -41,6 +44,10 @@ enum HTTPMethod {
 	GET, POST, DELETE, PUT, UNSUPPORTED
 };
 
+enum MessageBodyLength {
+	CONTENT_LENGTH, CHUNKED
+};
+
 
 // INFO: main class
 class Request {
@@ -49,6 +56,12 @@ private:
 	SOCKET				_fd;
 	String				_buffer;
 	ClientConnection*	_connection;
+	MessageBodyLength	_mesage_body_length;
+	unsigned long		_body_length;
+	size_t				_chunk_size;
+	bool				_chunk_read;
+	bool				_expect_CRLF;
+	int					_CRLF_end_position;
 	
 
 public:
@@ -80,6 +93,7 @@ private:
 	// INFO: parse request helpers
 	void	parseStartLine();
 	void	parseFieldLine();
+	void	determiningMessageBodyLength();
 	void	parseBody();
 
 
@@ -95,6 +109,12 @@ private:
 
 	// INFO: parse body helpers
 	bool	openTmpBodyFile();
+	bool	defineTransferEncoding();
+	void	readBodyWithTransferEncoding();
+	bool	getChunckSize();
+
+	bool	defineConetentLength();
+	void	readBodyWithContentLengt();
 
 	// INFO: helper functions
 	void	readSocketBuffer();
