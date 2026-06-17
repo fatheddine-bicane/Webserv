@@ -24,7 +24,7 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 void	Request::attemptRequestParse() {
 	readSocketBuffer();
 
-	while (isRequestState(INCOMPLETE)) {
+	while (isRequestState(INCOMPLETE) && this->_buffer.length() != 0) {
 		switch (this->_state) {
 			case START_LINE: parseStartLine(); break;
 			case HEADERS: parseFieldLine(); break;
@@ -345,12 +345,16 @@ void	Request::readBodyWithTransferEncoding() {
 
 	if (this->_chunk_read && !getChunckSize()) return;
 
+	// BUG: not optimized
+	// if the getChunkSize() expects a CRLF
+	if (this->_expect_CRLF) goto expect_CRLF;
+
 	// buffer_size = this->_buffer.size();
 
 	// if the buffer contains the chunk size of data
 	if (this->_buffer.size() >= this->_chunk_size) {
 		this->tmp_body_file.write(this->_buffer.data(), this->_chunk_size);
-		this->_buffer = this->_buffer.substr(this->_chunk_size);
+		this->_buffer.erase(0, this->_chunk_size);
 
 		this->_expect_CRLF = true;
 
@@ -386,7 +390,7 @@ void	Request::readBodyWithTransferEncoding() {
 
 		this->_chunk_read = true;
 		this->_expect_CRLF = false;
-	} else {
+	} else if (this->_buffer.length() >= 1){
 		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.size());
 		this->_chunk_size -= this->_buffer.size();
 		this->_buffer.clear();
@@ -424,6 +428,32 @@ bool	Request::getChunckSize() {
 
 	// this is the last chunk
 	if (this->_chunk_size == 0) {
+		this->_expect_CRLF = true;
+
+		if (this->_buffer.size() < 2) {
+			if (this->_buffer.size() == 1
+				&& this->_buffer[0] != '\r'
+				&& this->_buffer[0] != '\n') {
+
+				return malformedRequest(400);
+			}
+		}
+
+
+		else if (this->_buffer.size() == 1 && this->_buffer[0] == '\r') {
+			return false;
+		}
+
+		if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
+			this->_buffer.erase(0, 2);
+		} else if (this->_buffer[0] == '\n') {
+			this->_buffer.erase(0, 1);
+		} else {
+			return malformedRequest(400); // 400 Bad Request
+		}
+
+
+
 		this->_state = COMPLETE;
 		return false;
 	}
