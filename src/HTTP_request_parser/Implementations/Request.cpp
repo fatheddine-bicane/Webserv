@@ -300,6 +300,7 @@ bool	Request::defineTransferEncoding() {
 		return malformedRequest(501); // 501 Not Implemented
 	}
 
+	this->_mesage_body_length = CHUNKED;
 	return true;
 }
 
@@ -373,6 +374,7 @@ void	Request::readBodyWithTransferEncoding() {
 	} else {
 		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.size());
 		this->_chunk_size -= this->_buffer.size();
+		this->_buffer.clear();
 	}
 }
 
@@ -407,7 +409,6 @@ bool	Request::getChunckSize() {
 
 	// this is the last chunk
 	if (this->_chunk_size == 0) {
-		this->_buffer = this->_buffer.substr(pos + this->_CRLF_end_position);
 		this->_state = COMPLETE;
 		return false;
 	}
