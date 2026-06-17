@@ -143,12 +143,16 @@ void	Request::determiningMessageBodyLength() {
 
 
 void	Request::parseBody() {
-	if (transferEncodingPresent()) {
-		readBodyWithTransferEncoding();
-	} else if (contentLengthPresent()) {
-		// handle
-	}
 
+	switch (this->_mesage_body_length) {
+		case CHUNKED:
+			readBodyWithTransferEncoding();
+			break;
+		case CONTENT_LENGTH:
+			readBodyWithContentLengt();
+			break;
+	
+	}
 
 	// WARNING: close the tmp body file if the request
 	// body was received completely
@@ -301,6 +305,7 @@ bool	Request::defineTransferEncoding() {
 	}
 
 	this->_mesage_body_length = CHUNKED;
+
 	return true;
 }
 
@@ -360,6 +365,16 @@ void	Request::readBodyWithTransferEncoding() {
 		}
 
 	expect_CRLF:
+		if (this->_buffer.size() < 2) {
+			if (this->_buffer.size() == 1
+				&& this->_buffer[0] != '\r'
+				&& this->_buffer[0] != '\n') {
+
+				malformedRequest(400);
+			}
+			return;
+		}
+
 		if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
 			this->_buffer.erase(0, 2);
 		} else if (this->_buffer[0] == '\n') {
@@ -422,7 +437,26 @@ bool	Request::getChunckSize() {
 
 
 void	Request::readBodyWithContentLengt() {
+	if (this->_buffer.length() >= this->_body_length) {
+		// write to the tmp fie
+		this->tmp_body_file.write(this->_buffer.data(), this->_body_length);
 
+		// update the buffer
+		this->_buffer.erase(0, this->_body_length);
+
+		this->_state = COMPLETE;
+	}
+
+	else {
+		// write to the tmp fie
+		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.length());
+
+		// update buffer length
+		this->_body_length -= this->_buffer.length();
+
+		// update the buffer
+		this->_buffer.clear();
+	}
 }
 
 
