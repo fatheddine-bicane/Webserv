@@ -343,7 +343,7 @@ void	Request::readBodyWithTransferEncoding() {
 
 	// if the buffer contains the chunk size of data
 	if (this->_buffer.size() >= this->_chunk_size) {
-		this->tmp_body_file.write(this->_buffer.c_str(), this->_chunk_size);
+		this->tmp_body_file.write(this->_buffer.data(), this->_chunk_size);
 		this->_buffer = this->_buffer.substr(this->_chunk_size);
 
 		this->_expect_CRLF = true;
@@ -371,7 +371,7 @@ void	Request::readBodyWithTransferEncoding() {
 		this->_chunk_read = true;
 		this->_expect_CRLF = false;
 	} else {
-		this->tmp_body_file.write(this->_buffer.c_str(), this->_buffer.size());
+		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.size());
 		this->_chunk_size -= this->_buffer.size();
 	}
 }
