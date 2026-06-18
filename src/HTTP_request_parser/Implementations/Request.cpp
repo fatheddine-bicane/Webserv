@@ -11,6 +11,9 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_fd = fd;
 	this->_connection = client_connection;
 	this->_state = START_LINE;
+	this->_chunk_read = false;
+	this->_expect_CRLF = false;
+	this->_last_chunk = false;
 }
 
 // --------------------------------------------
@@ -88,10 +91,10 @@ void	Request::parseFieldLine() {
 		// then the request dosent contain body and its complete
 
 		// WARNING: debug
-		// else if (!transferEncodingPresent() || !contentLengthPresent()) {
-		// 	this->_state = COMPLETE;
-		// 	return;
-		// }
+		else if (!transferEncodingPresent() || !contentLengthPresent()) {
+			this->_state = COMPLETE;
+			return;
+		}
 
 		// a body is present change state to parse body
 		else {
@@ -336,20 +339,9 @@ bool	Request::defineConetentLength() {
 
 
 void	Request::readBodyWithTransferEncoding() {
-	int buffer_size = this->_buffer.size();
-	(void)buffer_size;
-	// forward declaration for the goto statement
-	// int buffer_size;
-
 	if (this->_expect_CRLF) goto expect_CRLF;
 
 	if (this->_chunk_read && !getChunckSize()) return;
-
-	// BUG: not optimized
-	// if the getChunkSize() expects a CRLF
-	if (this->_expect_CRLF) goto expect_CRLF;
-
-	// buffer_size = this->_buffer.size();
 
 	// if the buffer contains the chunk size of data
 	if (this->_buffer.size() >= this->_chunk_size) {
@@ -388,8 +380,13 @@ void	Request::readBodyWithTransferEncoding() {
 			return;
 		}
 
-		this->_chunk_read = true;
-		this->_expect_CRLF = false;
+		if (this->_last_chunk) {
+			this->_state = COMPLETE;
+		} else {
+			this->_chunk_read = true;
+			this->_expect_CRLF = false;
+		}
+
 	} else if (this->_buffer.length() >= 1){
 		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.size());
 		this->_chunk_size -= this->_buffer.size();
@@ -428,34 +425,7 @@ bool	Request::getChunckSize() {
 
 	// this is the last chunk
 	if (this->_chunk_size == 0) {
-		this->_expect_CRLF = true;
-
-		if (this->_buffer.size() < 2) {
-			if (this->_buffer.size() == 1
-				&& this->_buffer[0] != '\r'
-				&& this->_buffer[0] != '\n') {
-
-				return malformedRequest(400);
-			}
-		}
-
-
-		else if (this->_buffer.size() == 1 && this->_buffer[0] == '\r') {
-			return false;
-		}
-
-		if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
-			this->_buffer.erase(0, 2);
-		} else if (this->_buffer[0] == '\n') {
-			this->_buffer.erase(0, 1);
-		} else {
-			return malformedRequest(400); // 400 Bad Request
-		}
-
-
-
-		this->_state = COMPLETE;
-		return false;
+		return readLastChunk();
 	}
 
 	this->_chunk_read = false;
@@ -463,6 +433,38 @@ bool	Request::getChunckSize() {
 }
 
 
+
+bool	Request::readLastChunk() {
+	this->_expect_CRLF = true;
+	this->_last_chunk = true;
+
+	if (this->_buffer.size() < 2) {
+		if (this->_buffer.size() == 1
+			&& this->_buffer[0] != '\r'
+			&& this->_buffer[0] != '\n') {
+
+			return malformedRequest(400);
+		}
+	}
+
+	else if (this->_buffer.size() == 1 && this->_buffer[0] == '\r') {
+		return false;
+	}
+
+	if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
+		this->_buffer.erase(0, 2);
+	} else if (this->_buffer[0] == '\n') {
+		this->_buffer.erase(0, 1);
+	} else {
+		return malformedRequest(400); // 400 Bad Request
+	}
+
+	this->_state = COMPLETE;
+	this->_expect_CRLF = false;
+	this->_chunk_read = false;
+
+	return false;
+}
 
 
 

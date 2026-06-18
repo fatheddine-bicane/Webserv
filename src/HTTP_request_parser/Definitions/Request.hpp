@@ -62,6 +62,7 @@ private:
 	bool				_chunk_read;
 	bool				_expect_CRLF;
 	int					_CRLF_end_position;
+	bool				_last_chunk;
 	
 
 public:
@@ -112,6 +113,7 @@ private:
 	bool	defineTransferEncoding();
 	void	readBodyWithTransferEncoding();
 	bool	getChunckSize();
+	bool	readLastChunk();
 
 	bool	defineConetentLength();
 	void	readBodyWithContentLengt();
