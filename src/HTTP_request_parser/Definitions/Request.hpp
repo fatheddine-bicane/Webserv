@@ -1,11 +1,12 @@
 #pragma once
 
-#include "../../Includes/Typedef.hpp"
-#include <iterator>
+#include "../../Includes/Webserv.hpp"
 
+
+#define MAX_REQUEST_SIZE 2047
 
 enum HTTPmethod{
-	GET, POST, DELETE, PUT
+	GET, POST, DELETE, PUT, UNKNOWN
 };
 
 enum RequesState {
@@ -14,6 +15,10 @@ enum RequesState {
 
 class Request {
 private:
+	SOCKET _fd;
+	ClientConnection* _client_connection;
+	String _buffer;
+
 	RequesState _state;
 	HTTPmethod _method;
 
@@ -25,7 +30,8 @@ private:
 
 	size_t _body_lenght;
 	bool _has_body;
-	String _body;
+
+	String consumeLine();
 public:
 	Request();
 	~Request();
@@ -38,7 +44,7 @@ public:
 	String getBody() const;
 	size_t getBodyLength() const;
 	RequesState getRequestState() const;
-	void parseStartLine(const String& start_line);
-	void parseHeaders(const String& headers_block);
+	void parseStartLine();
+	void parseHeaders();
 	bool expectsBody() const;
 };
