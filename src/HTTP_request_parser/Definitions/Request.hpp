@@ -48,6 +48,10 @@ enum MessageBodyLength {
 	CONTENT_LENGTH, CHUNKED
 };
 
+enum ChunkState {
+    CHUNK_SIZE, CHUNK_DATA, CHUNK_CRLF, CHUNK_TRAILERS
+};
+
 
 // INFO: main class
 class Request {
@@ -56,13 +60,18 @@ private:
 	SOCKET				_fd;
 	String				_buffer;
 	ClientConnection*	_connection;
+
+
+	// body helper variables
 	MessageBodyLength	_mesage_body_length;
+
+	// content length
 	unsigned long		_body_length;
+
+	// chunked encoding
 	size_t				_chunk_size;
-	bool				_chunk_read;
 	bool				_expect_CRLF;
-	int					_CRLF_end_position;
-	bool				_last_chunk;
+	ChunkState			_chunk_state;
 	
 
 public:
@@ -77,7 +86,7 @@ public:
 	String						tmp_body_file_name;
 	std::ofstream				tmp_body_file;
 
-	STATUS_CODE			status_code;
+	STATUS_CODE					status_code;
 
 public:
 	// INFO: constructor
@@ -110,10 +119,13 @@ private:
 
 	// INFO: parse body helpers
 	bool	openTmpBodyFile();
+
 	bool	defineTransferEncoding();
 	void	readBodyWithTransferEncoding();
-	bool	getChunckSize();
-	bool	readLastChunk();
+	void	consumeChunkSize();
+	void	consumeChunkData();
+	void	consumeChunkCRLF();
+	void	consumeTrailerSection();
 
 	bool	defineConetentLength();
 	void	readBodyWithContentLengt();

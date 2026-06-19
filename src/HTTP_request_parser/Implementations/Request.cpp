@@ -1,5 +1,6 @@
 #include "../Definitions/Request.hpp"
 #include "../../Core_modules/Connection/Definitions/ClientConnection.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
 #include <string>
@@ -11,9 +12,8 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_fd = fd;
 	this->_connection = client_connection;
 	this->_state = START_LINE;
-	this->_chunk_read = false;
 	this->_expect_CRLF = false;
-	this->_last_chunk = false;
+	// this->_last_chunk = false;
 }
 
 // --------------------------------------------
@@ -89,8 +89,6 @@ void	Request::parseFieldLine() {
 
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
-
-		// WARNING: debug
 		else if (!transferEncodingPresent() || !contentLengthPresent()) {
 			this->_state = COMPLETE;
 			return;
@@ -125,6 +123,7 @@ void	Request::parseFieldLine() {
 void	Request::determiningMessageBodyLength() {
 	if (transferEncodingPresent() && contentLengthPresent()) {
 		malformedRequest(400); // 400 Bad Request
+		return;
 	}
 
 	// open tmp file
@@ -308,6 +307,7 @@ bool	Request::defineTransferEncoding() {
 	}
 
 	this->_mesage_body_length = CHUNKED;
+	this->_chunk_state = CHUNK_SIZE;
 
 	return true;
 }
@@ -339,116 +339,99 @@ bool	Request::defineConetentLength() {
 
 
 void	Request::readBodyWithTransferEncoding() {
-	if (this->_expect_CRLF) goto expect_CRLF;
-
-	if (this->_chunk_read && !getChunckSize()) return;
-
-	// if the buffer contains the chunk size of data
-	if (this->_buffer.size() >= this->_chunk_size) {
-		this->tmp_body_file.write(this->_buffer.data(), this->_chunk_size);
-		this->_buffer.erase(0, this->_chunk_size);
-
-		this->_expect_CRLF = true;
-
-		if (this->_buffer.size() == 0) {
-			return;
-		}
-
-		// check if the CRLF is not fully received in the buffer in case
-		// of '\r\n' as a CRLF
-		else if (this->_buffer.size() == 1 && this->_buffer[0] == '\r') {
-			return;
-		}
-
-	expect_CRLF:
-		if (this->_buffer.size() < 2) {
-			if (this->_buffer.size() == 1
-				&& this->_buffer[0] != '\r'
-				&& this->_buffer[0] != '\n') {
-
-				malformedRequest(400);
-			}
-			return;
-		}
-
-		if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
-			this->_buffer.erase(0, 2);
-		} else if (this->_buffer[0] == '\n') {
-			this->_buffer.erase(0, 1);
-		} else {
-			malformedRequest(400); // 400 Bad Request
-			return;
-		}
-
-		if (this->_last_chunk) {
-			this->_state = COMPLETE;
-		} else {
-			this->_chunk_read = true;
-			this->_expect_CRLF = false;
-		}
-
-	} else if (this->_buffer.length() >= 1){
-		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.size());
-		this->_chunk_size -= this->_buffer.size();
-		this->_buffer.clear();
+	switch (this->_chunk_state) {
+		case CHUNK_SIZE: consumeChunkSize(); break;
+		case CHUNK_DATA: consumeChunkData(); break;
+		case CHUNK_CRLF: consumeChunkCRLF(); break;
+		case CHUNK_TRAILERS: consumeTrailerSection(); break;
 	}
 }
 
 
-
-bool	Request::getChunckSize() {
-	// consume the chunk metadata line
-	size_t pos = this->_buffer.find(CRLF);
-	this->_CRLF_end_position = 2;
+void	Request::consumeChunkSize() {
+	// consume the chunk metadata
+	size_t pos = this->_buffer.find("\r\n");
+	size_t crlf_length = 2;
 	if (pos == String::npos) {
 		pos = this->_buffer.find('\n');
-		if (pos == String::npos) {
-			return false;
-		}
-		this->_CRLF_end_position = 1;
-	}
-	String chunk_size_str = this->_buffer.substr(0, pos);
-	this->_buffer = this->_buffer.substr(pos + this->_CRLF_end_position);
+		crlf_length = 1;
 
-	// ignore any metadata other than chunk size
+		if (pos == String::npos) {
+			// client sending a malecious
+			if (this->_buffer.length() > _8KB) {
+				malformedRequest(413); // 413 Content Too Large
+			}
+
+			// else wait for more content
+			return;
+		}
+	}
+
+	// extract metadata line
+	String chunk_size_str = this->_buffer.substr(0, pos);
+	this->_buffer = this->_buffer.substr(pos + crlf_length);
+
+	// ignore any chunk extentions
 	pos = chunk_size_str.find(';');
 	if (pos != String::npos) {
 		chunk_size_str = chunk_size_str.substr(0, pos);
 	}
 
-	// get the chunk size
+	trimString(chunk_size_str);
+
+	if (chunk_size_str.empty()) {
+		malformedRequest(400); // 400 Bad Request
+		return;
+	}
+
+	// set the chunk size
 	char* end = NULL;
 	this->_chunk_size = std::strtol(chunk_size_str.c_str(), &end, 16);
 	if (*end != '\0') {
-		return malformedRequest(400); // 400 Bad Request
+		malformedRequest(400); // 400 Bad Request
+		return;
 	}
 
-	// this is the last chunk
+	// determine the next state
 	if (this->_chunk_size == 0) {
-		return readLastChunk();
+		this->_chunk_state = CHUNK_TRAILERS;
+	} else {
+		this->_chunk_state = CHUNK_DATA;
 	}
-
-	this->_chunk_read = false;
-	return true;
 }
 
 
 
-bool	Request::readLastChunk() {
-	this->_expect_CRLF = true;
-	this->_last_chunk = true;
+void	Request::consumeChunkData() {
+	if (this->_buffer.empty()) {
+		return;
+	}
 
+	// get the available bytes to write
+	size_t bytes_to_read = std::min(this->_buffer.size(), this->_chunk_size);
+
+	this->tmp_body_file.write(this->_buffer.data(), bytes_to_read);
+	this->_buffer.erase(0, bytes_to_read);
+	this->_chunk_size -= bytes_to_read;
+
+	// if the chunk data was read parse the CRLF
+	if (this->_chunk_size == 0) {
+		this->_chunk_state = CHUNK_CRLF;
+	}
+}
+
+
+
+void	Request::consumeChunkCRLF() {
+	// check if the CRLF syntax is wrong befor blocking
 	if (this->_buffer.size() < 2) {
 		if (this->_buffer.size() == 1
 			&& this->_buffer[0] != '\r'
 			&& this->_buffer[0] != '\n') {
 
-			return malformedRequest(400);
+			malformedRequest(400); // 400 Bad Request
 		}
-	}
-
-	else if (this->_buffer.size() == 1 && this->_buffer[0] == '\r') {
-		return false;
+		return;
 	}
 
 	if (this->_buffer[0] == '\r' && this->_buffer[1] == '\n') {
@@ -456,14 +439,36 @@ bool	Request::readLastChunk() {
 	} else if (this->_buffer[0] == '\n') {
 		this->_buffer.erase(0, 1);
 	} else {
-		return malformedRequest(400); // 400 Bad Request
+		malformedRequest(400); // 400 Bad Request
+		return;
 	}
 
-	this->_state = COMPLETE;
-	this->_expect_CRLF = false;
-	this->_chunk_read = false;
+	// read next chunk
+	this->_chunk_state = CHUNK_SIZE;
+}
 
-	return false;
+
+
+void	Request::consumeTrailerSection() {
+	String line = consumeLine();
+
+	// line not ready wait for more data
+	if (line == LINE_NOT_READY) {
+		return;
+	}
+
+	// security a trailer section is too large
+	// BAD_VALUE is returned in the case of line exeds 8kb
+	if (line == BAD_VALUE) {
+		return;
+	}
+
+	// if last line received mark the request complete
+	if (line == CRLF) {
+		this->_state = COMPLETE;
+	}
+
+	// if its a valid trailer under 8kb return to read next line
 }
 
 
