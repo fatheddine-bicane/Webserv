@@ -17,6 +17,7 @@
 
 #include "../../Core_modules/Typedef.hpp"
 #include "../../Config_parser/Parser/Definitions/Directives.hpp"
+#include "HTTPStatus.hpp"
 
 #define _8KB 8192
 #define _4KB 4096
@@ -129,6 +130,7 @@ private:
 
 	bool	defineConetentLength();
 	void	readBodyWithContentLengt();
+
 
 	// INFO: helper functions
 	void	readSocketBuffer();

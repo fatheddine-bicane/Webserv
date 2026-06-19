@@ -13,7 +13,6 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_connection = client_connection;
 	this->_state = START_LINE;
 	this->_expect_CRLF = false;
-	// this->_last_chunk = false;
 }
 
 // --------------------------------------------
@@ -104,7 +103,7 @@ void	Request::parseFieldLine() {
 	replaceBareCRWithSP(field_line);
 
 	if (field_line[0] == '\t' || field_line[0] == ' ') {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return;
 	}
 
@@ -122,7 +121,7 @@ void	Request::parseFieldLine() {
 
 void	Request::determiningMessageBodyLength() {
 	if (transferEncodingPresent() && contentLengthPresent()) {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return;
 	}
 
@@ -156,8 +155,7 @@ void	Request::parseBody() {
 	
 	}
 
-	// WARNING: close the tmp body file if the request
-	// body was received completely
+	// close the tmp file once the request is completed or malformed
 	if (this->_state != BODY) {
 		this->tmp_body_file.close();
 	}
@@ -170,7 +168,7 @@ void	Request::parseBody() {
 bool	Request::parseMethod(String& start_line) {
 	size_t pos = start_line.find(' ');
 	if (pos == String::npos) {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 
 	String method = start_line.substr(0, pos);
@@ -187,7 +185,7 @@ bool	Request::parseMethod(String& start_line) {
 
 	// if server dosent recognize the method
 	else {
-		return malformedRequest(501); // 501 Not Implemented
+		return malformedRequest(NotImplemented);
 	}
 
 	// update line
@@ -200,14 +198,14 @@ bool	Request::parseMethod(String& start_line) {
 bool	Request::parseTargetResource(String& start_line) {
 	size_t pos = start_line.find(' ');
 	if (pos == String::npos) {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 
 	String target_resource = start_line.substr(0, pos);
 
 	// server limit refusing to process long URIs
 	if (target_resource.length() >= 100) {
-		return malformedRequest(414); // 414 URI Too Long
+		return malformedRequest(URITooLong);
 	}
 
 	this->target_resource = target_resource;
@@ -222,23 +220,23 @@ bool	Request::parseTargetResource(String& start_line) {
 bool	Request::parseHTTPVersion(String& HTTP_version) {
 	String http = HTTP_version.substr(0, HTTP_version.find('/'));
 	if (http != "HTTP") {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 
 	size_t pos = HTTP_version.find('/');
 	if (pos == String::npos) {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 
 	String value = HTTP_version.substr(pos + 1);
 	if (value.length() != 3) {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 	if (!isdigit(value[0]) || !isdigit(value[2])) {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 	if (value[1] != '.') {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 
 	this->HTTP_version = value;
@@ -252,13 +250,13 @@ bool	Request::parseHTTPVersion(String& HTTP_version) {
 String	Request::parseFieldName(String& start_line) {
 	size_t pos = start_line.find(':');
 	if (pos == String::npos) {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return BAD_VALUE;
 	}
 
 	String field_name = start_line.substr(0, pos);
 	if (field_name.find_last_of(WHITE_SPACES) != String::npos) {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return BAD_VALUE;
 	}
 
@@ -290,7 +288,7 @@ bool	Request::openTmpBodyFile() {
 
 	this->tmp_body_file.open(this->tmp_body_file_name.c_str());
 	if (!this->tmp_body_file.is_open()) {
-		return malformedRequest(500); // 500 Internal Server Error
+		return malformedRequest(InternalServerError);
 	}
 
 	return true;
@@ -303,7 +301,7 @@ bool	Request::defineTransferEncoding() {
 
 	// deny any encoding not implemented by the server
 	if (transfer_encoding != "chunked") {
-		return malformedRequest(501); // 501 Not Implemented
+		return malformedRequest(NotImplemented);
 	}
 
 	this->_mesage_body_length = CHUNKED;
@@ -320,14 +318,14 @@ bool	Request::defineConetentLength() {
 	char* end = NULL;
 	long body_length = std::strtol(body_length_str.c_str(), &end, 10);
 	if (*end != '\0') {
-		return malformedRequest(400); // 400 Bad Request
+		return malformedRequest(BadRequest);
 	}
 
 	// check if the length is more than the allowed
 	long client_max_body_size =
 		this->_connection->server->shared_directives.client_max_body_size;
 	if (body_length > client_max_body_size) {
-		return malformedRequest(413); // 413 Content Too Large
+		return malformedRequest(PayloadTooLarge);
 	}
 
 	this->_body_length = body_length;
@@ -359,7 +357,7 @@ void	Request::consumeChunkSize() {
 		if (pos == String::npos) {
 			// client sending a malecious
 			if (this->_buffer.length() > _8KB) {
-				malformedRequest(413); // 413 Content Too Large
+				malformedRequest(PayloadTooLarge);
 			}
 
 			// else wait for more content
@@ -380,7 +378,7 @@ void	Request::consumeChunkSize() {
 	trimString(chunk_size_str);
 
 	if (chunk_size_str.empty()) {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return;
 	}
 
@@ -388,7 +386,7 @@ void	Request::consumeChunkSize() {
 	char* end = NULL;
 	this->_chunk_size = std::strtol(chunk_size_str.c_str(), &end, 16);
 	if (*end != '\0') {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return;
 	}
 
@@ -429,7 +427,7 @@ void	Request::consumeChunkCRLF() {
 			&& this->_buffer[0] != '\r'
 			&& this->_buffer[0] != '\n') {
 
-			malformedRequest(400); // 400 Bad Request
+			malformedRequest(BadRequest);
 		}
 		return;
 	}
@@ -439,7 +437,7 @@ void	Request::consumeChunkCRLF() {
 	} else if (this->_buffer[0] == '\n') {
 		this->_buffer.erase(0, 1);
 	} else {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return;
 	}
 
@@ -582,7 +580,7 @@ String	Request::consumeLine() {
 	if (pos == String::npos) {
 		// line is greater than 4kb
 		if (this->_buffer.length() > _8KB) {
-			malformedRequest(413); // 413 Content Too Large
+			malformedRequest(PayloadTooLarge);
 			return BAD_VALUE;
 		}
 		return LINE_NOT_READY;
@@ -600,14 +598,14 @@ String	Request::consumeLine() {
 
 		// syntax error
 		else {
-			malformedRequest(400); // 400 Bad Request
+			malformedRequest(BadRequest);
 			return BAD_VALUE;
 		}
 	}
 
 	// line contain only white spaces
 	else if (line.find_first_not_of(WHITE_SPACES) == String::npos) {
-		malformedRequest(400); // 400 Bad Request
+		malformedRequest(BadRequest);
 		return BAD_VALUE;
 	}
 
@@ -660,7 +658,7 @@ bool	Request::linkServerObject() {
 		// including the host field in HTTP 1.0 is optional
 		// if its HTTP 1.0 use default server
 		if (HTTP_version > 1.0f) {
-			return malformedRequest(400); // 400 Bad Request
+			malformedRequest(BadRequest);
 		} else {
 			host_value = "default";
 		}
