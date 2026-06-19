@@ -17,7 +17,7 @@
 
 #include "../../Core_modules/Typedef.hpp"
 #include "../../Config_parser/Parser/Definitions/Directives.hpp"
-#include "HTTPStatus.hpp"
+#include "../../Core_modules/HTTPStatus.hpp"
 
 #define _8KB 8192
 #define _4KB 4096
@@ -87,7 +87,7 @@ public:
 	String						tmp_body_file_name;
 	std::ofstream				tmp_body_file;
 
-	STATUS_CODE					status_code;
+	HTTPStatus					status_code;
 
 public:
 	// INFO: constructor
@@ -137,7 +137,7 @@ private:
 	size_t	getCRLFPosition();
 	void	replaceBareCRWithSP(String& request_line);
 	void	trimString(String& string);
-	bool	malformedRequest(STATUS_CODE status_code);
+	bool	malformedRequest(HTTPStatus status_code);
 	String	consumeLine();
 	bool	linkServerObject();
 	bool	transferEncodingPresent();

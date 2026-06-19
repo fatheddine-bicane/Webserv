@@ -566,7 +566,7 @@ void	Request::trimString(String& string) {
 }
 
 
-bool	Request::malformedRequest(STATUS_CODE status_code) {
+bool	Request::malformedRequest(HTTPStatus status_code) {
 	this->status_code = status_code;
 	this->_state = MALFORMED;
 	return false;
