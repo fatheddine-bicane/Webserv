@@ -1,4 +1,4 @@
-#include "Includes/Webserv.hpp"
+#include "Core_modules/Webserv/Definitions/Webserv.hpp"
 
 
 int main(int argc, char** argv) {
@@ -41,8 +41,31 @@ int main(int argc, char** argv) {
 			}
 
 			else if (connection->type == CLIENT_S) {
-			}
+				ClientConnection* client_connection = dynamic_cast<ClientConnection*>(connection);
 
+				client_connection->request.attemptRequestParse();
+
+				if (client_connection->request.isRequestState(COMPLETE)) {
+					// process request
+				}
+
+				if (client_connection->request.isRequestState(MALFORMED)) {
+					// if client is still connected serv erorr code page
+					// if client droped connection close socket connection
+				}
+
+				// request still incoming
+				if (!client_connection->request.isRequestState(COMPLETE)) {
+					continue;
+				}
+
+
+
+				// processes request
+
+				// serve request
+
+			} // if client connection
 		} // for each ready socket
 	} //while true
 
