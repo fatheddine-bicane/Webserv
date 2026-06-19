@@ -157,7 +157,7 @@ void	Request::parseBody() {
 
 	// close the tmp file once the request is completed or malformed
 	if (this->_state != BODY) {
-		this->tmp_body_file.close();
+		this->_tmp_body_file.close();
 	}
 }
 
@@ -284,10 +284,10 @@ String	Request::parseFieldValue(String& start_line) {
 bool	Request::openTmpBodyFile() {
 	String file_name = generateRandomFileName();
 	String& tmp_path = this->_connection->server->shared_directives.client_body_temp_path;
-	this->tmp_body_file_name = "./" + tmp_path + "/" + file_name;
+	this->tmp_body_file_name = tmp_path + "/" + file_name;
 
-	this->tmp_body_file.open(this->tmp_body_file_name.c_str());
-	if (!this->tmp_body_file.is_open()) {
+	this->_tmp_body_file.open(this->tmp_body_file_name.c_str());
+	if (!this->_tmp_body_file.is_open()) {
 		return malformedRequest(InternalServerError);
 	}
 
@@ -408,7 +408,7 @@ void	Request::consumeChunkData() {
 	// get the available bytes to write
 	size_t bytes_to_read = std::min(this->_buffer.size(), this->_chunk_size);
 
-	this->tmp_body_file.write(this->_buffer.data(), bytes_to_read);
+	this->_tmp_body_file.write(this->_buffer.data(), bytes_to_read);
 	this->_buffer.erase(0, bytes_to_read);
 	this->_chunk_size -= bytes_to_read;
 
@@ -474,7 +474,7 @@ void	Request::consumeTrailerSection() {
 void	Request::readBodyWithContentLengt() {
 	if (this->_buffer.length() >= this->_body_length) {
 		// write to the tmp fie
-		this->tmp_body_file.write(this->_buffer.data(), this->_body_length);
+		this->_tmp_body_file.write(this->_buffer.data(), this->_body_length);
 
 		// update the buffer
 		this->_buffer.erase(0, this->_body_length);
@@ -484,7 +484,7 @@ void	Request::readBodyWithContentLengt() {
 
 	else {
 		// write to the tmp fie
-		this->tmp_body_file.write(this->_buffer.data(), this->_buffer.length());
+		this->_tmp_body_file.write(this->_buffer.data(), this->_buffer.length());
 
 		// update buffer length
 		this->_body_length -= this->_buffer.length();

@@ -65,6 +65,7 @@ private:
 
 	// body helper variables
 	MessageBodyLength	_mesage_body_length;
+	std::ofstream		_tmp_body_file;
 
 	// content length
 	unsigned long		_body_length;
@@ -85,7 +86,6 @@ public:
 	Headers						headers;
 	// body
 	String						tmp_body_file_name;
-	std::ofstream				tmp_body_file;
 
 	HTTPStatus					status_code;
 
