@@ -42,7 +42,7 @@ enum RequestState {
 
 
 enum HTTPMethod {
-	GET, POST, DELETE, PUT, UNSUPPORTED
+	GET, POST, DELETE, PUT
 };
 
 enum MessageBodyLength {

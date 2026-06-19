@@ -1,4 +1,6 @@
 #include "Core_modules/Webserv/Definitions/Webserv.hpp"
+#include "HTTP_request_parser/Definitions/Request.hpp"
+#include "Process_request/Definitions/ProcessRequest.hpp"
 
 
 int main(int argc, char** argv) {
@@ -45,23 +47,14 @@ int main(int argc, char** argv) {
 
 				client_connection->request.attemptRequestParse();
 
-				if (client_connection->request.isRequestState(COMPLETE)) {
-					// process request
-				}
-
-				if (client_connection->request.isRequestState(MALFORMED)) {
-					// if client is still connected serv erorr code page
-					// if client droped connection close socket connection
-				}
-
 				// request still incoming
-				if (!client_connection->request.isRequestState(COMPLETE)) {
+				if (client_connection->request.isRequestState(INCOMPLETE)) {
 					continue;
 				}
 
-
-
-				// processes request
+				// else processes request
+				ProcessRequest process_request(client_connection->request);
+				process_request.processRequest();
 
 				// serve request
 
