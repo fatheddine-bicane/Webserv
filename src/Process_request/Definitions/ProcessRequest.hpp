@@ -7,6 +7,7 @@ class ProcessRequest {
 private:
 	Request&	_request;
 	Server&		_server;
+	Location*	_location;
 
 
 public:
@@ -26,4 +27,7 @@ private:
 	void	processDeleteRequest();
 	void	processPutRequest();
 	void	processMalformedRequest();
+
+	// INFO: helper functions
+	void	findLocationBlock();
 };
