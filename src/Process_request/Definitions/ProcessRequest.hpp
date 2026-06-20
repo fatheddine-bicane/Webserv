@@ -5,12 +5,13 @@
 
 class ProcessRequest {
 private:
-	Request& _request;
+	Request&	_request;
+	Server&		_server;
 
 
 public:
 	// INFO: constructor
-	ProcessRequest(Request& request);
+	ProcessRequest(Request& request, Server& server);
 
 
 public:

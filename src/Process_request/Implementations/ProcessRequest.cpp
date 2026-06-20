@@ -5,8 +5,9 @@
 // INFO: constructor
 // -----------------------------------------------------------
 
-ProcessRequest::ProcessRequest(Request& request)
-	: _request(request) {}
+ProcessRequest::ProcessRequest(Request& request, Server& server)
+	: _request(request),
+	  _server(server) {}
 
 // -----------------------------------------------------------
 

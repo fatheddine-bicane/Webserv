@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 				}
 
 				// else processes request
-				ProcessRequest process_request(client_connection->request);
+				ProcessRequest process_request(client_connection->request, *client_connection->server);
 				process_request.processRequest();
 
 				// serve request
