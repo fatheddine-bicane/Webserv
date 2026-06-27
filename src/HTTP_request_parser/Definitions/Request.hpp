@@ -67,6 +67,7 @@ private:
 	MessageBodyLength	_mesage_body_length;
 	std::ofstream		_tmp_body_file;
 
+	//FIXME:
 	// content length
 	unsigned long		_body_length;
 
@@ -75,8 +76,8 @@ private:
 	bool				_expect_CRLF;
 	ChunkState			_chunk_state;
 	
-
-public:
+	
+	public:
 	// HTTP message
 	// start-line
 	HTTPMethod					method;

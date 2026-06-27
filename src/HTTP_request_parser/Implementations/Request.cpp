@@ -88,7 +88,7 @@ void	Request::parseFieldLine() {
 
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
-		else if (!transferEncodingPresent() || !contentLengthPresent()) {
+		else if (!transferEncodingPresent() && !contentLengthPresent()) {
 			this->_state = COMPLETE;
 			return;
 		}
@@ -283,8 +283,12 @@ String	Request::parseFieldValue(String& start_line) {
 // INFO: parse body helpers
 bool	Request::openTmpBodyFile() {
 	String file_name = generateRandomFileName();
+
+
+	//BUG:unsupport client_body_temp_path from config file(due to problems regarding linking location with current request)
 	String& tmp_path = this->_connection->server->shared_directives.client_body_temp_path;
-	this->tmp_body_file_name = tmp_path + "/" + file_name;
+	this->tmp_body_file_name = "./" + tmp_path + "/" + file_name;
+
 
 	this->_tmp_body_file.open(this->tmp_body_file_name.c_str());
 	if (!this->_tmp_body_file.is_open()) {
