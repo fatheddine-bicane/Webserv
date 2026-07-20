@@ -113,6 +113,64 @@ static String getMethodName(HTTPMethod method) {
 	}
 }
 
+bool isMultiPartFromData(String header){
+	return header.find("multipart/form-data") != String::npos;
+}
+
+String getBoundary(const String& header) {
+	size_t pos = header.find("boundary=");
+	if (pos == String::npos) return "";
+	return header.substr(pos + 9);
+}
+
+void handleMultipartUpload(const String& tmpFileName, const String& header, const String& uploadDir) {
+	String boundary = getBoundary(header);
+	if (boundary.empty()) throw ProcessRequestException(BadRequest);
+
+	String startBoundary = "--" + boundary;
+
+	std::ifstream inFile(tmpFileName.c_str(), std::ios::binary);
+	if (!inFile) throw ProcessRequestException(InternalServerError);
+
+	std::vector<char> buffer((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+	inFile.close();
+
+	std::vector<char>::iterator it = buffer.begin();
+	std::vector<char>::iterator end = buffer.end();
+
+	std::vector<char>::iterator boundaryPos = std::search(it, end, startBoundary.begin(), startBoundary.end());
+	if (boundaryPos == end) throw ProcessRequestException(BadRequest);
+
+	std::string bufferStr(boundaryPos, end);
+	size_t fileOptPos = bufferStr.find("filename=\"");
+	if (fileOptPos == std::string::npos) throw ProcessRequestException(BadRequest);
+
+	size_t filenameStart = fileOptPos + 10;
+	size_t filenameEnd = bufferStr.find("\"", filenameStart);
+	String filename = bufferStr.substr(filenameStart, filenameEnd - filenameStart);
+
+	size_t dCrlfPos = bufferStr.find("\r\n\r\n", fileOptPos);
+	if (dCrlfPos == std::string::npos) throw ProcessRequestException(BadRequest);
+
+	std::vector<char>::iterator fileDataStart = boundaryPos + dCrlfPos + 4;
+
+	std::vector<char>::iterator fileDataEnd = std::search(fileDataStart, end, startBoundary.begin(), startBoundary.end());
+	if (fileDataEnd == end) throw ProcessRequestException(BadRequest);
+
+	if (fileDataEnd - fileDataStart >= 2) {
+		fileDataEnd -= 2;
+	}
+
+	String finalFilePath = uploadDir + "/" + filename;
+	std::ofstream outFile(finalFilePath.c_str(), std::ios::binary);
+	if (!outFile) throw ProcessRequestException(InternalServerError);
+
+	if (fileDataStart < fileDataEnd) {
+		outFile.write(&*fileDataStart, std::distance(fileDataStart, fileDataEnd));
+	}
+	outFile.close();
+}
+
 void ProcessRequest::processPostRequest(){
 	// 1 check if POST is allowed in _location
 	if (!this->_location->limit_except.empty()) {
@@ -130,25 +188,35 @@ void ProcessRequest::processPostRequest(){
 	if (!root.empty() && root[root.length() - 1] == '/') {
 		root.erase(root.length() - 1);
 	}
-	String filePath = root + this->_request.target_resource;
 
-	// Open the temporary file where the request body was stored
-	std::ifstream inFile(this->_request.tmp_body_file_name.c_str(), std::ios::binary);
-	if (!inFile) {
-		throw ProcessRequestException(InternalServerError);
+	if (isMultiPartFromData(this->_request.headers["content-type"])){
+		String upload_dir = "./nginx" + root + this->_request.target_resource;
+		try{
+			handleMultipartUpload(this->_request.tmp_body_file_name, this->_request.headers["content-type"], upload_dir);
+		} catch(...){
+			remove(this->_request.tmp_body_file_name.c_str());
+			throw;
+		}
 	}
-	// Open the destination file
-	std::ofstream outFile(("./nginx/" + filePath).c_str(), std::ios::binary);
-	if (!outFile) {
+	else {
+		String filePath = root + this->_request.target_resource;
+
+		std::ifstream inFile(this->_request.tmp_body_file_name.c_str(), std::ios::binary);
+		if (!inFile) {
+			throw ProcessRequestException(InternalServerError);
+		}
+
+		std::ofstream outFile(("./nginx/" + filePath).c_str(), std::ios::binary);
+		if (!outFile) {
+			inFile.close();
+			throw ProcessRequestException(InternalServerError);
+		}
+
+		outFile << inFile.rdbuf();
+
 		inFile.close();
-		throw ProcessRequestException(InternalServerError);
+		outFile.close();
+		remove(this->_request.tmp_body_file_name.c_str());
 	}
-	// Write the contents from the temporary file to the destination file
-	outFile << inFile.rdbuf();
-
-	inFile.close();
-	outFile.close();
-
-	remove(this->_request.tmp_body_file_name.c_str());
 
 }
