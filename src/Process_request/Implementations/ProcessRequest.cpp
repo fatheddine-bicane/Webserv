@@ -7,6 +7,7 @@
 #include <iterator>
 #include <list>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <vector>
 
 
@@ -201,6 +202,35 @@ static void removeTmpBodyFile(const String& tmpFileName) {
 	}
 }
 
+static bool isDirectory(const String& path) {
+	struct stat pathInfo;
+	if (stat(path.c_str(), &pathInfo) != 0) {
+		return false;
+	}
+
+	return S_ISDIR(pathInfo.st_mode);
+}
+
+static bool ensureDirectoryExists(const String& path) {
+	if (path.empty() || isDirectory(path)) {
+		return true;
+	}
+
+	size_t separator = path.find_last_of('/');
+	if (separator != String::npos) {
+		String parent = path.substr(0, separator);
+		if (!parent.empty() && !ensureDirectoryExists(parent)) {
+			return false;
+		}
+	}
+
+	if (mkdir(path.c_str(), 0755) == 0) {
+		return true;
+	}
+
+	return isDirectory(path);
+}
+
 void ProcessRequest::processPostRequest(){
 	// 1 check if POST is allowed in _location
 	if (!this->_location->limit_except.empty()) {
@@ -225,9 +255,14 @@ void ProcessRequest::processPostRequest(){
 
 	if (is_multipart) {
 		String upload_dir = "./nginx" + root + this->_request.target_resource;
+		if (!ensureDirectoryExists(upload_dir)) {
+			throw ProcessRequestException(InternalServerError);
+		}
+
 		try {
 			handleMultipartUpload(this->_request.tmp_body_file_name, content_type->second, upload_dir);
 			removeTmpBodyFile(this->_request.tmp_body_file_name);
+			this->_request.status_code = Created;
 		} catch (...) {
 			removeTmpBodyFile(this->_request.tmp_body_file_name);
 			throw;
@@ -235,13 +270,21 @@ void ProcessRequest::processPostRequest(){
 	}
 	else {
 		String filePath = root + this->_request.target_resource;
+		String outputPath = "./nginx/" + filePath;
+		size_t parentSeparator = outputPath.find_last_of('/');
+		if (parentSeparator != String::npos) {
+			String parentDir = outputPath.substr(0, parentSeparator);
+			if (!ensureDirectoryExists(parentDir)) {
+				throw ProcessRequestException(InternalServerError);
+			}
+		}
 
 		std::ifstream inFile(this->_request.tmp_body_file_name.c_str(), std::ios::binary);
 		if (!inFile) {
 			throw ProcessRequestException(InternalServerError);
 		}
 
-		std::ofstream outFile(("./nginx/" + filePath).c_str(), std::ios::binary);
+		std::ofstream outFile(outputPath.c_str(), std::ios::binary);
 		if (!outFile) {
 			inFile.close();
 			throw ProcessRequestException(InternalServerError);
@@ -252,6 +295,7 @@ void ProcessRequest::processPostRequest(){
 		inFile.close();
 		outFile.close();
 		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		this->_request.status_code = Created;
 	}
 
 }
