@@ -1,8 +1,13 @@
 #include "../Definitions/ProcessRequest.hpp"
 #include "../Exceptions/ProcessRequestException.hpp"
 #include <cstddef>
+#include <algorithm>
+#include <cstdio>
+#include <fstream>
+#include <iterator>
 #include <list>
 #include <sys/stat.h>
+#include <vector>
 
 
 // INFO: constructor
@@ -117,6 +122,23 @@ bool isMultiPartFromData(String header){
 	return header.find("multipart/form-data") != String::npos;
 }
 
+static String sanitizeFilename(const String& filename) {
+	if (filename.empty()) {
+		return "";
+	}
+
+	String::size_type slashPos = filename.find_last_of("/\\");
+	if (slashPos == String::npos) {
+		return filename;
+	}
+
+	if (slashPos + 1 >= filename.length()) {
+		return "";
+	}
+
+	return filename.substr(slashPos + 1);
+}
+
 String getBoundary(const String& header) {
 	size_t pos = header.find("boundary=");
 	if (pos == String::npos) return "";
@@ -148,6 +170,8 @@ void handleMultipartUpload(const String& tmpFileName, const String& header, cons
 	size_t filenameStart = fileOptPos + 10;
 	size_t filenameEnd = bufferStr.find("\"", filenameStart);
 	String filename = bufferStr.substr(filenameStart, filenameEnd - filenameStart);
+	filename = sanitizeFilename(filename);
+	if (filename.empty()) throw ProcessRequestException(BadRequest);
 
 	size_t dCrlfPos = bufferStr.find("\r\n\r\n", fileOptPos);
 	if (dCrlfPos == std::string::npos) throw ProcessRequestException(BadRequest);
@@ -171,6 +195,12 @@ void handleMultipartUpload(const String& tmpFileName, const String& header, cons
 	outFile.close();
 }
 
+static void removeTmpBodyFile(const String& tmpFileName) {
+	if (!tmpFileName.empty()) {
+		remove(tmpFileName.c_str());
+	}
+}
+
 void ProcessRequest::processPostRequest(){
 	// 1 check if POST is allowed in _location
 	if (!this->_location->limit_except.empty()) {
@@ -189,12 +219,17 @@ void ProcessRequest::processPostRequest(){
 		root.erase(root.length() - 1);
 	}
 
-	if (isMultiPartFromData(this->_request.headers["content-type"])){
+	Headers::const_iterator content_type = this->_request.headers.find("content-type");
+	const bool is_multipart = (content_type != this->_request.headers.end()
+		&& isMultiPartFromData(content_type->second));
+
+	if (is_multipart) {
 		String upload_dir = "./nginx" + root + this->_request.target_resource;
-		try{
-			handleMultipartUpload(this->_request.tmp_body_file_name, this->_request.headers["content-type"], upload_dir);
-		} catch(...){
-			remove(this->_request.tmp_body_file_name.c_str());
+		try {
+			handleMultipartUpload(this->_request.tmp_body_file_name, content_type->second, upload_dir);
+			removeTmpBodyFile(this->_request.tmp_body_file_name);
+		} catch (...) {
+			removeTmpBodyFile(this->_request.tmp_body_file_name);
 			throw;
 		}
 	}
@@ -216,7 +251,7 @@ void ProcessRequest::processPostRequest(){
 
 		inFile.close();
 		outFile.close();
-		remove(this->_request.tmp_body_file_name.c_str());
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
 	}
 
 }
