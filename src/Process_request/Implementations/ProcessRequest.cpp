@@ -147,53 +147,76 @@ String getBoundary(const String& header) {
 }
 
 void handleMultipartUpload(const String& tmpFileName, const String& header, const String& uploadDir) {
-	String boundary = getBoundary(header);
-	if (boundary.empty()) throw ProcessRequestException(BadRequest);
+    String boundary = getBoundary(header);
+    if (boundary.empty()) throw ProcessRequestException(BadRequest);
 
-	String startBoundary = "--" + boundary;
+    std::ifstream inFile(tmpFileName.c_str(), std::ios::binary);
+    if (!inFile.is_open()) throw ProcessRequestException(InternalServerError);
 
-	std::ifstream inFile(tmpFileName.c_str(), std::ios::binary);
-	if (!inFile) throw ProcessRequestException(InternalServerError);
+    String line;
+    String filename;
+    
+    // 1. Read headers line-by-line until filename is found and \r\n\r\n is reached
+    while (std::getline(inFile, line)) {
+        if (!line.empty() && line[line.size() - 1] == '\r') {
+            line.erase(line.size() - 1);
+        }
+        
+        if (line.find("filename=\"") != String::npos) {
+            size_t start = line.find("filename=\"") + 10;
+            size_t end = line.find("\"", start);
+            if (start < end) {
+                filename = sanitizeFilename(line.substr(start, end - start));
+            }
+        }
+        
+        // Blank line marks the end of headers and start of raw binary file data
+        if (line.empty()) {
+            break;
+        }
+    }
 
-	std::vector<char> buffer((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
-	inFile.close();
+    if (filename.empty()) {
+        inFile.close();
+        throw ProcessRequestException(BadRequest);
+    }
 
-	std::vector<char>::iterator it = buffer.begin();
-	std::vector<char>::iterator end = buffer.end();
+    // 2. Open output file destination
+    String finalFilePath = uploadDir + "/" + filename;
+    std::ofstream outFile(finalFilePath.c_str(), std::ios::binary);
+    if (!outFile.is_open()) {
+        inFile.close();
+        throw ProcessRequestException(InternalServerError);
+    }
 
-	std::vector<char>::iterator boundaryPos = std::search(it, end, startBoundary.begin(), startBoundary.end());
-	if (boundaryPos == end) throw ProcessRequestException(BadRequest);
+    // 3. Stream body using constant 8KB memory window
+    const size_t BUFFER_SIZE = 8192;
+    char buffer[BUFFER_SIZE];
+    
+    String boundaryMarker = "\r\n--" + boundary;
+    String slidingWindow;
 
-	std::string bufferStr(boundaryPos, end);
-	size_t fileOptPos = bufferStr.find("filename=\"");
-	if (fileOptPos == std::string::npos) throw ProcessRequestException(BadRequest);
+    while (inFile.read(buffer, BUFFER_SIZE) || inFile.gcount() > 0) {
+        size_t bytesRead = inFile.gcount();
+        slidingWindow.append(buffer, bytesRead);
 
-	size_t filenameStart = fileOptPos + 10;
-	size_t filenameEnd = bufferStr.find("\"", filenameStart);
-	String filename = bufferStr.substr(filenameStart, filenameEnd - filenameStart);
-	filename = sanitizeFilename(filename);
-	if (filename.empty()) throw ProcessRequestException(BadRequest);
+        // Find boundary position inside sliding window
+        size_t boundaryPos = slidingWindow.find(boundaryMarker);
+        if (boundaryPos != String::npos) {
+            outFile.write(slidingWindow.data(), boundaryPos);
+            break;
+        }
 
-	size_t dCrlfPos = bufferStr.find("\r\n\r\n", fileOptPos);
-	if (dCrlfPos == std::string::npos) throw ProcessRequestException(BadRequest);
+        // Keep safe margin to prevent splitting the boundary across buffer chunks
+        if (slidingWindow.size() > boundaryMarker.size()) {
+            size_t safeWriteSize = slidingWindow.size() - boundaryMarker.size();
+            outFile.write(slidingWindow.data(), safeWriteSize);
+            slidingWindow.erase(0, safeWriteSize);
+        }
+    }
 
-	std::vector<char>::iterator fileDataStart = boundaryPos + dCrlfPos + 4;
-
-	std::vector<char>::iterator fileDataEnd = std::search(fileDataStart, end, startBoundary.begin(), startBoundary.end());
-	if (fileDataEnd == end) throw ProcessRequestException(BadRequest);
-
-	if (fileDataEnd - fileDataStart >= 2) {
-		fileDataEnd -= 2;
-	}
-
-	String finalFilePath = uploadDir + "/" + filename;
-	std::ofstream outFile(finalFilePath.c_str(), std::ios::binary);
-	if (!outFile) throw ProcessRequestException(InternalServerError);
-
-	if (fileDataStart < fileDataEnd) {
-		outFile.write(&*fileDataStart, std::distance(fileDataStart, fileDataEnd));
-	}
-	outFile.close();
+    outFile.close();
+    inFile.close();
 }
 
 static void removeTmpBodyFile(const String& tmpFileName) {
