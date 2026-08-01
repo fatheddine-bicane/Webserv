@@ -286,7 +286,7 @@ String	Request::parseFieldValue(String& start_line) {
 // INFO: parse body helpers
 bool	Request::openTmpBodyFile() {
 	String file_name = generateRandomFileName();
-	String& tmp_path = this->_connection->server->shared_directives.client_body_temp_path;
+	String& tmp_path = this->_location->shared_directives.client_body_temp_path;
 	this->tmp_body_file_name = tmp_path + "/" + file_name;
 
 	this->_tmp_body_file.open(this->tmp_body_file_name.c_str());
