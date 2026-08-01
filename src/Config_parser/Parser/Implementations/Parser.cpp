@@ -692,9 +692,6 @@ void	Parser::parseLocation(Server& server) {
 			case ERROR_PAGE:
 				parseErrorPage(location_directive.shared_directives);
 				break;
-			case CLIENT_MAX_BODY_SIZE:
-				parseClientMaxBodySize(location_directive.shared_directives);
-				break;
 			case CLIENT_BODY_TEMP_PATH:
 				parseClientBodyTempPath(location_directive.shared_directives);
 				break;
