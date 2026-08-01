@@ -61,6 +61,7 @@ private:
 	SOCKET				_fd;
 	String				_buffer;
 	ClientConnection*	_connection;
+	Location*			_location;
 
 
 	// body helper variables
@@ -132,6 +133,7 @@ private:
 	void	readBodyWithContentLengt();
 
 
+private:
 	// INFO: helper functions
 	void	readSocketBuffer();
 	size_t	getCRLFPosition();
@@ -143,6 +145,7 @@ private:
 	bool	transferEncodingPresent();
 	bool	contentLengthPresent();
 	String	generateRandomFileName();
+	bool	findLocationBlock();
 
 
 

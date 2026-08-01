@@ -86,6 +86,9 @@ void	Request::parseFieldLine() {
 		// link the server object
 		if (!linkServerObject()) return;
 
+		// map location block
+		if (!findLocationBlock()) return;
+
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
 		else if (!transferEncodingPresent() || !contentLengthPresent()) {
@@ -714,5 +717,51 @@ String	Request::generateRandomFileName() {
 
 	return file_name;
 }
+
+
+bool	Request::findLocationBlock() {
+	std::list<Location>::iterator it = this->_connection->server->locations.begin();
+	std::list<Location>::iterator end = this->_connection->server->locations.end();
+
+	Location*	default_path_location = NULL;
+
+	int matched_char = 0;
+	for (; it != end; it++) {
+		if (this->target_resource == it->path) {
+			this->_location = &(*it);
+			return true;
+		}
+
+		// match the longest uri
+		else {
+			if (it->path == "/") {
+				default_path_location = &(*it);
+			}
+
+			if (this->target_resource.find(it->path) == 0) {
+
+				int current_path_length = it->path.length();
+
+				if (current_path_length > matched_char) {
+					matched_char = current_path_length;
+					this->_location = &(*it);
+				}
+			}
+		}
+	}
+
+	if (matched_char == 0 && this->_location == NULL) {
+		if (default_path_location) {
+			this->_location = default_path_location;
+		}
+
+		else {
+			return malformedRequest(NotFound);
+		}
+	}
+
+	return true;
+}
+
 
 // --------------------------------------------
