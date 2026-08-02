@@ -35,7 +35,7 @@ enum RequestState {
 	// determining the BODY reading method
 	DETERMINING_MESSAGE_BODY_LENGTH,
 
-	//ready to serve responce
+	//ready to serve response
 	READY_TO_SERVE,
 	// request parsed and its correct
 	COMPLETE,

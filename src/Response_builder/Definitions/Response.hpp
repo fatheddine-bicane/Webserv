@@ -7,7 +7,7 @@
 class ClientConnection;
 
 
-class Responce {
+class Response {
 private:
 	String	_headers;
 	ClientConnection* _client_connection;
@@ -18,7 +18,7 @@ public:
 
 public:
 	// INFO: constructor
-	Responce(ClientConnection* client_connection);
+	Response(ClientConnection* client_connection);
 
 
 	// INFO: api

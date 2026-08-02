@@ -2,11 +2,9 @@
 
 #include "Connection.hpp"
 #include "../../../HTTP_request_parser/Definitions/Request.hpp"
-#include "../../../Responce_builder/Definitions/Responce.hpp"
+#include "../../../Response_builder/Definitions/Response.hpp"
 #include "../../../Server_multiplexing/Exceptions/SystemCallsExceptions.hpp"
 
-
-// class Responce;
 
 enum ConnectionState {
 	KEEP_ALIVE, CLOSE
@@ -19,7 +17,7 @@ public:
 	Server*			server;
 	String&	ip_port;
 	Servers&	servers;
-	Responce	responce;
+	Response	response;
 
 public:
 	ClientConnection(SOCKET fd, String& ip_port, Servers& servers);

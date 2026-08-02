@@ -1,7 +1,7 @@
 #include <sys/epoll.h>
 
 #include "../Definitions/ClientConnection.hpp"
-#include "../../../Responce_builder/Definitions/Responce.hpp"
+#include "../../../Response_builder/Definitions/Response.hpp"
 #include "../../Typedef.hpp"
 
 ClientConnection::ClientConnection(SOCKET fd,
@@ -11,7 +11,7 @@ ClientConnection::ClientConnection(SOCKET fd,
 	  request(fd, this),
 	  ip_port(ip_port),
 	  servers(servers),
-	  responce(this) {
+	  response(this) {
 	this->server = NULL;
 }
 

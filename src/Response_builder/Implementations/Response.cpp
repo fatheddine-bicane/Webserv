@@ -1,4 +1,4 @@
-#include "../Definitions/Responce.hpp"
+#include "../Definitions/Response.hpp"
 #include <sstream>
 
 
@@ -6,7 +6,7 @@
 // INFO: api
 // -----------------------------------------------------------
 
-Responce::Responce(ClientConnection* client_connection) 
+Response::Response(ClientConnection* client_connection) 
 	: _client_connection(client_connection) {}
 
 // -----------------------------------------------------------
@@ -17,7 +17,7 @@ Responce::Responce(ClientConnection* client_connection)
 // INFO: api
 // -----------------------------------------------------------
 
-void	Responce::initialHeaders(HTTPStatus HTTP_status) {
+void	Response::initialHeaders(HTTPStatus HTTP_status) {
 	// transform the status code from an enum to a string
 	std::ostringstream oss;
 	oss << HTTP_status;
@@ -29,7 +29,7 @@ void	Responce::initialHeaders(HTTPStatus HTTP_status) {
 
 
 
-void	Responce::appendHeaders(const String& key, const String& value, bool last_header) {
+void	Response::appendHeaders(const String& key, const String& value, bool last_header) {
 	this->_headers += key + ": " + value + "\r\n";
 
 	if (last_header) {
