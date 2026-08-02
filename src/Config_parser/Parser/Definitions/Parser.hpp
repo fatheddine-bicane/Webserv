@@ -26,7 +26,7 @@ private:
 
 // INFO: constructors
 public:
-	Parser(std::vector<Token> tokens, String& source);
+	Parser(std::vector<Token>& tokens, String& source);
 
 
 // INFO: API

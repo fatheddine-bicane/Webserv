@@ -4,7 +4,7 @@
 // INFO: constructors
 // ---------------------------------------------------------
 
-Parser::Parser(std::vector<Token> tokens, String& source) 
+Parser::Parser(std::vector<Token>& tokens, String& source) 
 	: _source(source) {
 	this->_current = 0;
 	this->_tokens = tokens;
