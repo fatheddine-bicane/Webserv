@@ -1,18 +1,28 @@
+#pragma once
+
 #include "../../Core_modules/Typedef.hpp"
 #include "../../Config_parser/Parser/Definitions/Directives.hpp"
 #include "../../Core_modules/HTTPStatus.hpp"
+
+class ClientConnection;
 
 
 class Responce {
 private:
 	String	_headers;
+	ClientConnection* _client_connection;
+
+public:
+	String	file_to_send;
 
 
 public:
 	// INFO: constructor
-	Responce() {}
+	Responce(ClientConnection* client_connection);
+
 
 	// INFO: api
 	void	initialHeaders(HTTPStatus HTTP_status);
 	void	appendHeaders(const String& key, const String& value, bool last_header=false);
+
 };

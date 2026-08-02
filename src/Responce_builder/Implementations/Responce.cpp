@@ -1,5 +1,16 @@
 #include "../Definitions/Responce.hpp"
-#include <string>
+#include <sstream>
+
+
+
+// INFO: api
+// -----------------------------------------------------------
+
+Responce::Responce(ClientConnection* client_connection) 
+	: _client_connection(client_connection) {}
+
+// -----------------------------------------------------------
+
 
 
 
@@ -25,6 +36,8 @@ void	Responce::appendHeaders(const String& key, const String& value, bool last_h
 		this->_headers += "\r\n";
 	}
 }
+
+
 
 // -----------------------------------------------------------
 
