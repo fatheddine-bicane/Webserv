@@ -45,18 +45,35 @@ int main(int argc, char** argv) {
 			else if (connection->type == CLIENT_S) {
 				ClientConnection* client_connection = dynamic_cast<ClientConnection*>(connection);
 
-				client_connection->request.attemptRequestParse();
+				// serve request if ready or malformed
+				if (client_connection->request.isRequestState(READY_TO_SERVE)) {
 
-				// request still incoming
-				if (client_connection->request.isRequestState(INCOMPLETE)) {
-					continue;
 				}
 
-				// else processes request
-				ProcessRequest process_request(client_connection->request, *client_connection->server);
-				process_request.processRequest();
+				// else keep on parsing the incoming request
+				else {
+					client_connection->request.attemptRequestParse();
 
-				// serve request
+					// request still incoming
+					if (client_connection->request.isRequestState(INCOMPLETE)) {
+						continue;
+					}
+
+					// else processes request
+					ProcessRequest process_request(client_connection->request, *client_connection->server);
+					process_request.processRequest();
+
+					if (client_connection->request.isRequestState(READY_TO_SERVE)) {
+
+						// monitor the socker for output
+						try {
+							client_connection->monitorSockerForOutput(webserv.epfd);
+						} catch (SystemCallsFailedException& e) {
+							std::cerr << e.what() << '\n';
+							return 3;
+						}
+					}
+				} // else keep parsing request
 
 			} // if client connection
 		} // for each ready socket
