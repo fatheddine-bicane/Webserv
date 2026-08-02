@@ -7,7 +7,12 @@
 // -----------------------------------------------------------
 
 void	Responce::initialHeaders(HTTPStatus HTTP_status) {
-	this->_headers = "HTTP/1.1 " + std::to_string(HTTP_status) + "  \r\n"
+	// transform the status code from an enum to a string
+	std::ostringstream oss;
+	oss << HTTP_status;
+	String status_code = oss.str();
+
+	this->_headers = "HTTP/1.1 " + status_code + "  \r\n"
 					 "Connection: close\r\n";
 }
 
