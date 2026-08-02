@@ -14,7 +14,7 @@ SharedDirectives::SharedDirectives() {
 
 	// client_body_temp_path directive
 	// TODO: assign the default path
-	this->client_body_temp_path = "/default-path";
+	this->client_body_temp_path = "./default-path";
 
 	// autoindex directive
 	this->autoindex = false;
