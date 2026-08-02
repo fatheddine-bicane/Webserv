@@ -61,7 +61,6 @@ private:
 	SOCKET				_fd;
 	String				_buffer;
 	ClientConnection*	_connection;
-	Location*			_location;
 
 
 	// body helper variables
@@ -89,6 +88,9 @@ public:
 	String						tmp_body_file_name;
 
 	HTTPStatus					status_code;
+
+	// mapped location block
+	Location*					location;
 
 public:
 	// INFO: constructor

@@ -1,7 +1,6 @@
 #include "../Definitions/ProcessRequest.hpp"
 #include "../Exceptions/ProcessRequestException.hpp"
 #include <cstddef>
-#include <list>
 
 
 // INFO: constructor
@@ -10,7 +9,7 @@
 ProcessRequest::ProcessRequest(Request& request, Server& server)
 	: _request(request),
 	  _server(server) {
-	this->_location = NULL;
+	this->_location = request.location;
 }
 
 // -----------------------------------------------------------

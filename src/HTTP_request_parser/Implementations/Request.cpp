@@ -286,7 +286,7 @@ String	Request::parseFieldValue(String& start_line) {
 // INFO: parse body helpers
 bool	Request::openTmpBodyFile() {
 	String file_name = generateRandomFileName();
-	String& tmp_path = this->_location->shared_directives.client_body_temp_path;
+	String& tmp_path = this->location->shared_directives.client_body_temp_path;
 	this->tmp_body_file_name = tmp_path + "/" + file_name;
 
 	this->_tmp_body_file.open(this->tmp_body_file_name.c_str());
@@ -728,7 +728,7 @@ bool	Request::findLocationBlock() {
 	int matched_char = 0;
 	for (; it != end; it++) {
 		if (this->target_resource == it->path) {
-			this->_location = &(*it);
+			this->location = &(*it);
 			return true;
 		}
 
@@ -744,15 +744,15 @@ bool	Request::findLocationBlock() {
 
 				if (current_path_length > matched_char) {
 					matched_char = current_path_length;
-					this->_location = &(*it);
+					this->location = &(*it);
 				}
 			}
 		}
 	}
 
-	if (matched_char == 0 && this->_location == NULL) {
+	if (matched_char == 0 && this->location == NULL) {
 		if (default_path_location) {
-			this->_location = default_path_location;
+			this->location = default_path_location;
 		}
 
 		else {
