@@ -25,7 +25,7 @@ SharedDirectives::SharedDirectives() {
 
 	// dav_methods empty set means the default value
 
-	this->create_full_put_path = false;
+	// this->create_full_put_path = false;
 }
 
 SharedDirectives&	SharedDirectives::operator=(const SharedDirectives& other) {
@@ -40,7 +40,7 @@ SharedDirectives&	SharedDirectives::operator=(const SharedDirectives& other) {
 	this->autoindex = other.autoindex;
 	this->index = other.index;
 	this->dav_methods = other.dav_methods;
-	this->create_full_put_path = other.create_full_put_path;
+	// this->create_full_put_path = other.create_full_put_path;
 
 	return *this;
 }
