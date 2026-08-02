@@ -74,6 +74,7 @@ private:
 	size_t				_chunk_size;
 	bool				_expect_CRLF;
 	ChunkState			_chunk_state;
+	long				_total_received_bytes;
 	
 
 public:

@@ -13,6 +13,7 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_connection = client_connection;
 	this->_state = START_LINE;
 	this->_expect_CRLF = false;
+	this->_total_received_bytes = 0;
 }
 
 // --------------------------------------------
@@ -326,7 +327,7 @@ bool	Request::defineConetentLength() {
 
 	// check if the length is more than the allowed
 	long client_max_body_size =
-		this->_connection->server->shared_directives.client_max_body_size;
+		this->location->shared_directives.client_max_body_size;
 	if (body_length > client_max_body_size) {
 		return malformedRequest(PayloadTooLarge);
 	}
@@ -390,6 +391,17 @@ void	Request::consumeChunkSize() {
 	this->_chunk_size = std::strtol(chunk_size_str.c_str(), &end, 16);
 	if (*end != '\0') {
 		malformedRequest(BadRequest);
+		return;
+	}
+
+	// update the total received bytes count
+	this->_total_received_bytes += this->_chunk_size;
+
+	// check if the length is more than the allowed
+	long client_max_body_size =
+		this->location->shared_directives.client_max_body_size;
+	if (this->_total_received_bytes > client_max_body_size) {
+		malformedRequest(PayloadTooLarge);
 		return;
 	}
 
