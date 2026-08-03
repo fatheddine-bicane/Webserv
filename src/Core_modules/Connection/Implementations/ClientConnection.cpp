@@ -21,7 +21,8 @@ void	ClientConnection::monitorSockerForOutput(EP_INSTANCE ep_instance) {
 	struct epoll_event event;
 
 	// monitor socket for output
-    event.events = EPOLLOUT | EPOLLET;
+    event.events = EPOLLOUT;
+    // event.events = EPOLLOUT | EPOLLET;
     event.data.ptr = this;
 
     if (epoll_ctl(ep_instance, EPOLL_CTL_MOD, this->fd, &event) == -1) {
