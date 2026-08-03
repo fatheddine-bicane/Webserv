@@ -25,5 +25,7 @@ public:
 	void	initialHeaders(HTTPStatus HTTP_status);
 	void	appendHeaders(const String& key, const String& value, bool last_header=false);
 
+	String	getContentType();
+	String	getContentType(const String& file_name);
 	String	extractReasonPhrase(HTTPStatus HTTP_status);
 };

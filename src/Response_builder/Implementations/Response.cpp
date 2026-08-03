@@ -39,7 +39,46 @@ void	Response::appendHeaders(const String& key, const String& value, bool last_h
 
 
 
+// INFO: helpers
 // -----------------------------------------------------------
+
+String Response::getContentType() {
+	return getContentType(this->file_to_send);
+}
+
+
+
+String	Response::getContentType(const String& file_name) {
+	// find the last occurrence of the dot character
+	size_t dotPos = file_name.find_last_of('.');
+
+	// if no dot is found or the dot is the last char return bynary stream
+	if (dotPos == String::npos || dotPos == file_name.length() - 1) {
+		return "application/octet-stream";
+	}
+
+	// extract the substring after the dot
+	String extention = file_name.substr(dotPos + 1);
+
+	// convert the extension to lowercase to ensure case-insensitive matching
+	for (int i = 0; i < extention.length(); i++) {
+		extention[i] = std::tolower(static_cast<unsigned char>(extention[i]));
+	}
+
+	// compare and return the standard MIME types
+	if (extention == "html" || extention == "htm") return "text/html";
+	if (extention == "css")                  return "text/css";
+	if (extention == "js")                   return "application/javascript";
+	if (extention == "json")                 return "application/json";
+	if (extention == "jpg" || extention == "jpeg") return "image/jpeg";
+	if (extention == "png")                  return "image/png";
+	if (extention == "gif")                  return "image/gif";
+	if (extention == "txt")                  return "text/plain";
+
+	// fallback for unknown extensions
+	return "application/octet-stream";
+}
+
 
 
 String Response::extractReasonPhrase(HTTPStatus HTTP_status) {
