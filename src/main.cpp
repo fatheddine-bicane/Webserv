@@ -72,6 +72,9 @@ int main(int argc, char** argv) {
 							std::cerr << e.what() << '\n';
 							return 3;
 						}
+
+						// initialize the response object
+						client_connection->response.initializeResponseObject();
 					}
 				} // else keep parsing request
 

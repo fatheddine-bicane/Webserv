@@ -1,13 +1,23 @@
 #include "../Definitions/Response.hpp"
-#include <sstream>
+#include "../../Core_modules/Connection/Definitions/ClientConnection.hpp"
+#include <cstddef>
 
 
 
-// INFO: api
+// INFO: constructor
 // -----------------------------------------------------------
 
 Response::Response(ClientConnection* client_connection) 
-	: _client_connection(client_connection) {}
+	: _client_connection(client_connection),
+	  _bytes_sent(0) {
+
+	appendHeaders("Connection", "close");
+	appendHeaders("Server", "Webserv/1.0");
+}
+
+Response::~Response() {
+	this->_file.close();
+}
 
 // -----------------------------------------------------------
 
@@ -17,25 +27,40 @@ Response::Response(ClientConnection* client_connection)
 // INFO: api
 // -----------------------------------------------------------
 
-void	Response::initialHeaders(HTTPStatus HTTP_status) {
-	// transform the status code from an enum to a string
-	std::ostringstream oss;
-	oss << HTTP_status;
-	String status_code = oss.str();
 
-	this->_headers = "HTTP/1.1 " + status_code + "  \r\n"
-					 "Connection: close\r\n";
+void	Response::initializeResponseObject() {
+	HTTPStatus HTTP_status = this->_client_connection->request.status_code;
+
+	buildStatusLine(HTTP_status);
+
+	// responding with an error page
+	if (HTTP_status > 400) {
+		if (attemptOpeningErrorPageFile(HTTP_status)) {
+			this->_response_state = DISK_FILE;
+		} else {
+			this->_staging_buffer = this->_headers + buildErrorPage(HTTP_status);
+			this->_response_state = BUILT_BODY;
+		}
+	} else {
+		// need to check if there is a file to serve
+	}
+
 }
 
 
 
-void	Response::appendHeaders(const String& key, const String& value, bool last_header) {
+void	Response::appendHeaders(const String& key, const String& value,
+								bool last_header) {
 	this->_headers += key + ": " + value + "\r\n";
 
 	if (last_header) {
 		this->_headers += "\r\n";
 	}
 }
+
+
+
+// -----------------------------------------------------------
 
 
 
@@ -79,7 +104,7 @@ String	Response::getContentType(const String& file_name) {
 	String extention = file_name.substr(dotPos + 1);
 
 	// convert the extension to lowercase to ensure case-insensitive matching
-	for (int i = 0; i < extention.length(); i++) {
+	for (size_t i = 0; i < extention.length(); i++) {
 		extention[i] = std::tolower(static_cast<unsigned char>(extention[i]));
 	}
 
@@ -95,6 +120,69 @@ String	Response::getContentType(const String& file_name) {
 
 	// fallback for unknown extensions
 	return "application/octet-stream";
+}
+
+
+
+bool	Response::attemptOpeningErrorPageFile(HTTPStatus HTTP_status) {
+	std::map<int, String>& error_pages =
+		this->_client_connection->request.location->shared_directives.error_page;
+
+	std::map<int, String>::iterator error_page = error_pages.find(HTTP_status);
+
+	// if the error page is not found
+	if (error_page == error_pages.end()) return false;
+
+	// if the file couldnt be opened: dosent exist,...
+	// INFO: opening the file with the ate flag to position at the end
+	//       of the file and get its size for the content-length header
+	this->_file.open(error_page->second.c_str(),
+				  std::ios::binary | std::ios::in | std::ios::ate);
+
+	if (!this->_file.is_open()) return false;
+
+	// get the file size
+    std::streamsize size = this->_file.tellg();
+	std::stringstream file_size;
+    file_size << size;
+
+
+	// reset file stream to the begining
+	this->_file.seekg(0, std::ios::beg);
+
+	// append file related headers
+	appendHeaders("Content-Type", getContentType(error_page->second));
+	appendHeaders("Content-Length", file_size.str(), true);
+
+	return true;
+}
+
+
+
+String	Response::buildErrorPage(HTTPStatus HTTP_status) {
+    String reason_phrase = extractReasonPhrase(HTTP_status);
+
+	// construct the standard HTML document
+    std::ostringstream html_body;
+    html_body << "<html>\r\n"
+              << "<head><title>" << HTTP_status << " " << reason_phrase << "</title></head>\r\n"
+              << "<body>\r\n"
+              << "<center><h1>" << HTTP_status << " " << reason_phrase << "</h1></center>\r\n"
+              << "<hr><center>Web Server</center>\r\n"
+              << "</body>\r\n"
+              << "</html>\r\n";
+
+    String error_page = html_body.str();
+
+	// transform content length
+	std::ostringstream oss;
+	oss << error_page.length();
+	String content_length = oss.str();
+
+	appendHeaders("Content-Type", "text/html");
+	appendHeaders("Content-Length", content_length, true);
+
+	return error_page;
 }
 
 
