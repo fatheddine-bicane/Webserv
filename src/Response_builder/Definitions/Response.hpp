@@ -37,6 +37,7 @@ public:
 
 	// INFO: api
 	void	initializeResponseObject();
+	void	sendResponse();
 	void	appendHeaders(const String& key, const String& value,
 						  bool last_header=false);
 

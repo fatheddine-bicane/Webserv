@@ -60,6 +60,49 @@ void	Response::appendHeaders(const String& key, const String& value,
 
 
 
+void	Response::sendResponse() {
+
+	switch (this->_response_state) {
+
+		default: break;
+	}
+
+
+
+
+
+	// // Safety check: ensure there is still data left to send
+	// if (this->_bytes_sent >= this->_response_str.length()) {
+	// 	return;
+	// }
+	//
+	// size_t bytes_remaining = this->_response_str.length() - this->_bytes_sent;
+	// const char* current_ptr = this->_response_str.c_str() + this->_bytes_sent;
+	//
+	// // Execute exactly ONE send() call per epoll_wait() event
+	// ssize_t sent = send(this->_client_fd, current_ptr, bytes_remaining, 0);
+	//
+	// if (sent > 0) {
+	// 	// The kernel accepted a chunk of data. Advance the offset.
+	// 	this->_bytes_sent += sent;
+	//
+	// 	// Check if the entire payload has now been transmitted
+	// 	if (this->_bytes_sent == this->_response_str.length()) {
+	// 		// Transition the connection state here 
+	// 		// (e.g., EPOLL_CTL_MOD back to EPOLLIN, or close the socket)
+	// 	}
+	// }
+	// else {
+	// 	// sent <= 0
+	// 	// Because epoll told us the socket was ready, a return of 0 (client disconnected)
+	// 	// or -1 (underlying socket error) means the connection is dead.
+	// 	// We do not check errno. We immediately drop the connection.
+	//
+	// 	// Execute socket cleanup and remove from epoll here.
+	// }
+}
+
+
 // -----------------------------------------------------------
 
 
