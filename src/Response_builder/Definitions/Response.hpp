@@ -25,4 +25,5 @@ public:
 	void	initialHeaders(HTTPStatus HTTP_status);
 	void	appendHeaders(const String& key, const String& value, bool last_header=false);
 
+	String	extractReasonPhrase(HTTPStatus HTTP_status);
 };
