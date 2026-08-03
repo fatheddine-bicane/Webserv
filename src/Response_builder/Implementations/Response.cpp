@@ -42,6 +42,24 @@ void	Response::appendHeaders(const String& key, const String& value, bool last_h
 // INFO: helpers
 // -----------------------------------------------------------
 
+void	Response::buildStatusLine(HTTPStatus HTTP_status) {
+	// transform the status code from an enum to a string
+	std::ostringstream ss;
+	ss << HTTP_status;
+	String status_code = ss.str();
+    String reason_phrase = extractReasonPhrase(HTTP_status);
+
+	// clear the stream
+	ss.str("");
+	ss.clear();
+
+	ss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n"
+	   << this->_headers;
+	this->_headers = ss.str();
+}
+
+
+
 String Response::getContentType() {
 	return getContentType(this->file_to_send);
 }
