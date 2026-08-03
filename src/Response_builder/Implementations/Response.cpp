@@ -34,7 +34,7 @@ void	Response::initializeResponseObject() {
 	buildStatusLine(HTTP_status);
 
 	// responding with an error page
-	if (HTTP_status > 400) {
+	if (HTTP_status >= 400) {
 		if (attemptOpeningErrorPageFile(HTTP_status)) {
 			this->_response_state = DISK_FILE;
 		} else {
