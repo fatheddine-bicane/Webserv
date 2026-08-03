@@ -4,7 +4,7 @@
 // INFO: constructors
 // ---------------------------------------------------------
 
-Parser::Parser(std::vector<Token> tokens, String& source) 
+Parser::Parser(std::vector<Token>& tokens, String& source) 
 	: _source(source) {
 	this->_current = 0;
 	this->_tokens = tokens;
@@ -140,7 +140,6 @@ bool	Parser::isDirective(TokenType token_type) {
 		case RETURN:
 		case DAV_METHODS:
 		case CLIENT_BODY_TEMP_PATH:
-		case CREATE_FULL_PUT_PATH:
 		case CGI_PASS:
 		case SERVER_NAME:
 			return true;
@@ -210,9 +209,6 @@ void	Parser::parseHttp() {
 			case AUTOINDEX: parseAutoindex(directive_context); break;
 			case INDEX: parseIndex(directive_context); break;
 			case DAV_METHODS: parseDavMethods(directive_context); break;
-			case CREATE_FULL_PUT_PATH:
-				parserCreateFullPutPath(directive_context);
-				break;
 			case SERVER:
 				server_block_appeard = true;
 				try {
@@ -281,9 +277,6 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 			case INDEX: parseIndex(server_directive.shared_directives); break;
 			case DAV_METHODS:
 				parseDavMethods(server_directive.shared_directives);
-				break;
-			case CREATE_FULL_PUT_PATH:
-				parserCreateFullPutPath(server_directive.shared_directives);
 				break;
 			case RETURN: parseReturn(server_directive.return_d); break;
 			case LOCATION:
@@ -525,26 +518,6 @@ expect_semicolon:
 
 
 
-void	Parser::parserCreateFullPutPath(SharedDirectives& directive_context) {
-	Token token = consume();
-
-	if (match(token, SEMICOLON) || !match(token, VALUE)) {
-		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
-	}
-
-	if (token.lexeme == "on") {
-		directive_context.create_full_put_path = true;
-	} else if (token.lexeme == "off") {
-		directive_context.create_full_put_path = false;
-	} else {
-		throw InvalidValueExceptions(token, "autoindex", this->_source);
-	}
-
-	expect(SEMICOLON);
-}
-
-
-
 String	Parser::parseServerName() {
 	Token token = consume();
 
@@ -692,9 +665,6 @@ void	Parser::parseLocation(Server& server) {
 			case ERROR_PAGE:
 				parseErrorPage(location_directive.shared_directives);
 				break;
-			case CLIENT_MAX_BODY_SIZE:
-				parseClientMaxBodySize(location_directive.shared_directives);
-				break;
 			case CLIENT_BODY_TEMP_PATH:
 				parseClientBodyTempPath(location_directive.shared_directives);
 				break;
@@ -703,9 +673,6 @@ void	Parser::parseLocation(Server& server) {
 			case INDEX: parseIndex(location_directive.shared_directives); break;
 			case DAV_METHODS:
 				parseDavMethods(location_directive.shared_directives);
-				break;
-			case CREATE_FULL_PUT_PATH:
-				parserCreateFullPutPath(location_directive.shared_directives);
 				break;
 			case RETURN: parseReturn(location_directive.return_d); break;
 			case ALIAS: parseAlias(location_directive); break;

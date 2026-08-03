@@ -13,6 +13,7 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_connection = client_connection;
 	this->_state = START_LINE;
 	this->_expect_CRLF = false;
+	this->_total_received_bytes = 0;
 }
 
 // --------------------------------------------
@@ -85,6 +86,9 @@ void	Request::parseFieldLine() {
 	} else if (field_line == CRLF) {
 		// link the server object
 		if (!linkServerObject()) return;
+
+		// map location block
+		if (!findLocationBlock()) return;
 
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
@@ -283,7 +287,7 @@ String	Request::parseFieldValue(String& start_line) {
 // INFO: parse body helpers
 bool	Request::openTmpBodyFile() {
 	String file_name = generateRandomFileName();
-	String& tmp_path = this->_connection->server->shared_directives.client_body_temp_path;
+	String& tmp_path = this->location->shared_directives.client_body_temp_path;
 	this->tmp_body_file_name = tmp_path + "/" + file_name;
 
 	this->_tmp_body_file.open(this->tmp_body_file_name.c_str());
@@ -323,7 +327,7 @@ bool	Request::defineConetentLength() {
 
 	// check if the length is more than the allowed
 	long client_max_body_size =
-		this->_connection->server->shared_directives.client_max_body_size;
+		this->location->shared_directives.client_max_body_size;
 	if (body_length > client_max_body_size) {
 		return malformedRequest(PayloadTooLarge);
 	}
@@ -387,6 +391,17 @@ void	Request::consumeChunkSize() {
 	this->_chunk_size = std::strtol(chunk_size_str.c_str(), &end, 16);
 	if (*end != '\0') {
 		malformedRequest(BadRequest);
+		return;
+	}
+
+	// update the total received bytes count
+	this->_total_received_bytes += this->_chunk_size;
+
+	// check if the length is more than the allowed
+	long client_max_body_size =
+		this->location->shared_directives.client_max_body_size;
+	if (this->_total_received_bytes > client_max_body_size) {
+		malformedRequest(PayloadTooLarge);
 		return;
 	}
 
@@ -714,5 +729,51 @@ String	Request::generateRandomFileName() {
 
 	return file_name;
 }
+
+
+bool	Request::findLocationBlock() {
+	std::list<Location>::iterator it = this->_connection->server->locations.begin();
+	std::list<Location>::iterator end = this->_connection->server->locations.end();
+
+	Location*	default_path_location = NULL;
+
+	int matched_char = 0;
+	for (; it != end; it++) {
+		if (this->target_resource == it->path) {
+			this->location = &(*it);
+			return true;
+		}
+
+		// match the longest uri
+		else {
+			if (it->path == "/") {
+				default_path_location = &(*it);
+			}
+
+			if (this->target_resource.find(it->path) == 0) {
+
+				int current_path_length = it->path.length();
+
+				if (current_path_length > matched_char) {
+					matched_char = current_path_length;
+					this->location = &(*it);
+				}
+			}
+		}
+	}
+
+	if (matched_char == 0 && this->location == NULL) {
+		if (default_path_location) {
+			this->location = default_path_location;
+		}
+
+		else {
+			return malformedRequest(NotFound);
+		}
+	}
+
+	return true;
+}
+
 
 // --------------------------------------------

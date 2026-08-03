@@ -74,6 +74,7 @@ private:
 	size_t				_chunk_size;
 	bool				_expect_CRLF;
 	ChunkState			_chunk_state;
+	long				_total_received_bytes;
 	
 
 public:
@@ -88,6 +89,9 @@ public:
 	String						tmp_body_file_name;
 
 	HTTPStatus					status_code;
+
+	// mapped location block
+	Location*					location;
 
 public:
 	// INFO: constructor
@@ -132,6 +136,7 @@ private:
 	void	readBodyWithContentLengt();
 
 
+private:
 	// INFO: helper functions
 	void	readSocketBuffer();
 	size_t	getCRLFPosition();
@@ -143,6 +148,7 @@ private:
 	bool	transferEncodingPresent();
 	bool	contentLengthPresent();
 	String	generateRandomFileName();
+	bool	findLocationBlock();
 
 
 

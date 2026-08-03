@@ -28,6 +28,4 @@ private:
 	void	processPutRequest();
 	void	processMalformedRequest();
 
-	// INFO: helper functions
-	void	findLocationBlock();
 };
