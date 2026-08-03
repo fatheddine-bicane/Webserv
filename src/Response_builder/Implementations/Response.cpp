@@ -16,7 +16,7 @@ Response::Response(ClientConnection* client_connection)
 }
 
 Response::~Response() {
-	this->_file.close();
+	this->_file_to_send.close();
 }
 
 // -----------------------------------------------------------
@@ -41,8 +41,10 @@ void	Response::initializeResponseObject() {
 			this->_staging_buffer = this->_headers + buildErrorPage(HTTP_status);
 			this->_response_state = BUILT_BODY;
 		}
-	} else {
-		// need to check if there is a file to serve
+	}
+	// responde with a file
+	else if (!this->file_to_send_name.empty()){
+		this->_response_state = DISK_FILE;
 	}
 
 }
@@ -129,7 +131,7 @@ void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 
 
 String Response::getContentType() {
-	return getContentType(this->file_to_send);
+	return getContentType(this->file_to_send_name);
 }
 
 
@@ -176,26 +178,13 @@ bool	Response::attemptOpeningErrorPageFile(HTTPStatus HTTP_status) {
 	// if the error page is not found
 	if (error_page == error_pages.end()) return false;
 
-	// if the file couldnt be opened: dosent exist,...
-	// INFO: opening the file with the ate flag to position at the end
-	//       of the file and get its size for the content-length header
-	this->_file.open(error_page->second.c_str(),
-				  std::ios::binary | std::ios::in | std::ios::ate);
+	if (!openFileToSend(error_page->second)) return false;
 
-	if (!this->_file.is_open()) return false;
-
-	// get the file size
-    std::streamsize size = this->_file.tellg();
-	std::stringstream file_size;
-    file_size << size;
-
-
-	// reset file stream to the begining
-	this->_file.seekg(0, std::ios::beg);
+	String file_size = getContentLength();
 
 	// append file related headers
 	appendHeaders("Content-Type", getContentType(error_page->second));
-	appendHeaders("Content-Length", file_size.str(), true);
+	appendHeaders("Content-Length", file_size, true);
 
 	return true;
 }
@@ -226,6 +215,39 @@ String	Response::buildErrorPage(HTTPStatus HTTP_status) {
 	appendHeaders("Content-Length", content_length, true);
 
 	return error_page;
+}
+
+
+
+bool	Response::openFileToSend() {
+	return openFileToSend(this->file_to_send_name);
+}
+
+
+
+bool	Response::openFileToSend(const String& file_name) {
+	// INFO: opening the file with the ate flag to position at the end
+	//       of the file and get its size for the content-length header
+	this->_file_to_send.open(file_name.c_str(),
+						  std::ios::binary | std::ios::in | std::ios::ate);
+
+	if (!this->_file_to_send.is_open()) return false;
+
+	return true;;
+}
+
+
+
+String	Response::getContentLength() {
+	// get the file size
+	std::streamsize size = this->_file_to_send.tellg();
+	std::stringstream file_size;
+	file_size << size;
+
+	// reset file stream to the begining
+	this->_file_to_send.seekg(0, std::ios::beg);
+
+	return file_size.str();
 }
 
 

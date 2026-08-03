@@ -22,11 +22,11 @@ private:
 	ResponseState		_response_state;
 	size_t				_bytes_sent;
 	String				_staging_buffer;
+	std::ifstream		_file_to_send;
 
-	std::ifstream		_file;
 
 public:
-	String	file_to_send;
+	String				file_to_send_name;
 
 
 public:
@@ -49,5 +49,8 @@ private:
 	String	getContentType(const String& file_name);
 	bool	attemptOpeningErrorPageFile(HTTPStatus HTTP_status);
 	String	buildErrorPage(HTTPStatus HTTP_status);
+	bool	openFileToSend();
+	bool	openFileToSend(const String& file_name);
+	String	getContentLength();
 	String	extractReasonPhrase(HTTPStatus HTTP_status);
 };
