@@ -59,6 +59,12 @@ bool	Request::isRequestState(RequestState request_state) {
 	return (this->_state == request_state);
 }
 
+
+
+void	Request::setRequestState(RequestState new_request_state) {
+	this->_state = new_request_state;
+}
+
 // --------------------------------------------
 
 

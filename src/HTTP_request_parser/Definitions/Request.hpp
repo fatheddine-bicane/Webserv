@@ -105,6 +105,7 @@ public:
 	// INFO: api
 	void	attemptRequestParse();
 	bool	isRequestState(RequestState request_state);
+	void	setRequestState(RequestState new_request_state);
 
 
 private:
