@@ -36,20 +36,33 @@ void	Response::initializeResponseObject() {
 
 	// responding with an error page
 	if (HTTP_status >= 400) {
+		// check if the config file defined an error page for this status code
 		if (attemptOpeningErrorPageFile(HTTP_status)) {
+			this->_staging_buffer = this->_headers;
 			this->_response_state = DISK_FILE;
-		} else {
+		}
+
+		// else build one
+		else {
 			this->_staging_buffer = this->_headers + buildErrorPage(HTTP_status);
-			this->_response_state = BUILT_BODY;
+			this->_response_state = STAGED_BUFFER;
 		}
 	}
+
 	// responde with a file
 	else if (this->serve_file) {
 		// append file related headers
 		appendHeaders("Content-Type", getContentType());
 		appendHeaders("Content-Length", getContentLength(), true);
 
+		this->_staging_buffer = this->_headers;
 		this->_response_state = DISK_FILE;
+	}
+
+	// else there is no file to serve just headers
+	else {
+		this->_staging_buffer = this->_headers;
+		this->_response_state = STAGED_BUFFER;
 	}
 
 }

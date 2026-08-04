@@ -12,7 +12,7 @@ class ClientConnection;
 class Response {
 private:
 	enum ResponseState {
-		DISK_FILE, BUILT_BODY
+		DISK_FILE, STAGED_BUFFER
 	};
 
 private:
