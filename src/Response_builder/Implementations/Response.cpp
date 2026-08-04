@@ -40,6 +40,8 @@ void	Response::initializeResponseObject() {
 		if (attemptOpeningErrorPageFile(HTTP_status)) {
 			this->_staging_buffer = this->_headers;
 			this->_response_state = DISK_FILE;
+            // send the stored headers
+            this->_disk_file_state = STAGED_BUFFER_READY;
 		}
 
 		// else build one
@@ -87,7 +89,16 @@ bool	Response::sendResponse() {
 
 	switch (this->_response_state) {
 		case DISK_FILE:
-			// disk file handler
+			if (this->_disk_file_state == STAGED_BUFFER_SENT) {
+				populateStagingBufferFromFileToSend();
+			}
+			if (this->_disk_file_state == STAGED_BUFFER_READY) {
+				sendStagedBufferPayload();
+			}
+
+			if (this->_file_to_send.eof()) {
+				this->_response_state = RESPONS_SERVED;
+			}
 			break;
 
 		case BUILT_BODY:
@@ -120,12 +131,22 @@ bool	Response::sendResponse() {
 
 
 
-void	Response::sendStagedBufferPayload() {
-	// return if there is no data left to send
-	if (this->_bytes_sent >= this->_staging_buffer.length()) {
-		return;
+void	Response::populateStagingBufferFromFileToSend() {
+	char chunk_buffer[_8KB];
+	this->_file_to_send.read(chunk_buffer, _8KB);
+
+	// check for the exact number of bytes extracted
+	std::streamsize bytes_read = this->_file_to_send.gcount();
+	if (bytes_read > 0) {
+		this->_staging_buffer.append(chunk_buffer, bytes_read);
 	}
 
+	this->_disk_file_state = STAGED_BUFFER_READY;
+}
+
+
+
+void	Response::sendStagedBufferPayload() {
 	size_t bytes_remaining = this->_staging_buffer.length() - this->_bytes_sent;
 	const char* current_ptr = this->_staging_buffer.c_str() + this->_bytes_sent;
 
@@ -141,6 +162,8 @@ void	Response::sendStagedBufferPayload() {
 			// if serving a file mark the current buffer as sent
 			if (this->_response_state == DISK_FILE) {
 				this->_disk_file_state = STAGED_BUFFER_SENT;
+				this->_bytes_sent = 0;
+				this->_staging_buffer.clear();
 			}
 
 			// any other serving method means that the response was

@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <fstream>
 
+#define _8KB 8192
+
 class ClientConnection;
 
 
@@ -19,7 +21,7 @@ private:
 	};
 
 	enum DiskFileState {
-		STAGED_BUFFER,
+		STAGED_BUFFER_READY,
 		STAGED_BUFFER_SENT,
 	};
 
@@ -56,6 +58,7 @@ public:
 
 	// INFO: helper functions
 private:
+	void	populateStagingBufferFromFileToSend();
 	void	sendStagedBufferPayload();
 	void	buildStatusLine(HTTPStatus HTTP_status);
 	String	getContentType();
