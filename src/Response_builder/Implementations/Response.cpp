@@ -11,6 +11,7 @@ Response::Response(ClientConnection* client_connection)
 	: _client_connection(client_connection),
 	  _bytes_sent(0) {
 
+	this->serve_file = false;
 	appendHeaders("Connection", "close");
 	appendHeaders("Server", "Webserv/1.0");
 }
@@ -43,7 +44,11 @@ void	Response::initializeResponseObject() {
 		}
 	}
 	// responde with a file
-	else if (!this->file_to_send_name.empty()){
+	else if (this->serve_file) {
+		// append file related headers
+		appendHeaders("Content-Type", getContentType());
+		appendHeaders("Content-Length", getContentLength(), true);
+
 		this->_response_state = DISK_FILE;
 	}
 
@@ -131,7 +136,7 @@ void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 
 
 String Response::getContentType() {
-	return getContentType(this->file_to_send_name);
+	return getContentType(this->_file_to_send_name);
 }
 
 
@@ -219,12 +224,6 @@ String	Response::buildErrorPage(HTTPStatus HTTP_status) {
 
 
 
-bool	Response::openFileToSend() {
-	return openFileToSend(this->file_to_send_name);
-}
-
-
-
 bool	Response::openFileToSend(const String& file_name) {
 	// INFO: opening the file with the ate flag to position at the end
 	//       of the file and get its size for the content-length header
@@ -233,6 +232,7 @@ bool	Response::openFileToSend(const String& file_name) {
 
 	if (!this->_file_to_send.is_open()) return false;
 
+	this->_file_to_send_name = file_name;
 	return true;;
 }
 

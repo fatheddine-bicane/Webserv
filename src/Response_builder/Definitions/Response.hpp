@@ -23,10 +23,11 @@ private:
 	size_t				_bytes_sent;
 	String				_staging_buffer;
 	std::ifstream		_file_to_send;
+	String				_file_to_send_name;
 
 
 public:
-	String				file_to_send_name;
+	bool				serve_file;
 
 
 public:
@@ -38,6 +39,7 @@ public:
 	// INFO: api
 	void	initializeResponseObject();
 	void	sendResponse();
+	bool	openFileToSend(const String& file_name);
 	void	appendHeaders(const String& key, const String& value,
 						  bool last_header=false);
 
@@ -49,8 +51,6 @@ private:
 	String	getContentType(const String& file_name);
 	bool	attemptOpeningErrorPageFile(HTTPStatus HTTP_status);
 	String	buildErrorPage(HTTPStatus HTTP_status);
-	bool	openFileToSend();
-	bool	openFileToSend(const String& file_name);
 	String	getContentLength();
 	String	extractReasonPhrase(HTTPStatus HTTP_status);
 };
