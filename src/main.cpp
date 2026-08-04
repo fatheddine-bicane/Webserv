@@ -50,7 +50,8 @@ int main(int argc, char** argv) {
 				if (client_connection->request.isRequestState(READY_TO_SERVE)) {
 					try {
 
-						if (client_connection->response.sendResponse()) {
+						client_connection->response.sendResponse();
+						if (client_connection->response.is_served) {
 							// clear connection
                             webserv.removeClient(client_connection);
 						}

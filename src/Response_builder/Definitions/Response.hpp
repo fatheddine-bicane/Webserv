@@ -40,6 +40,7 @@ private:
 
 public:
 	bool				serve_file;
+	bool				is_served;
 
 
 public:
@@ -50,7 +51,7 @@ public:
 
 	// INFO: api
 	void	initializeResponseObject();
-	bool	sendResponse();
+	void	sendResponse();
 	bool	openFileToSend(const String& file_name);
 	void	appendHeaders(const String& key, const String& value,
 						  bool last_header=false);

@@ -9,9 +9,10 @@
 
 Response::Response(ClientConnection* client_connection) 
 	: _client_connection(client_connection),
-	  _bytes_sent(0) {
+	  _bytes_sent(0),
+	  serve_file(false),
+	  is_served(false) {
 
-	this->serve_file = false;
 	appendHeaders("Connection", "close");
 	appendHeaders("Server", "Webserv/1.0");
 }
@@ -85,7 +86,7 @@ void	Response::appendHeaders(const String& key, const String& value,
 
 
 
-bool	Response::sendResponse() {
+void	Response::sendResponse() {
 
 	switch (this->_response_state) {
 		case DISK_FILE:
@@ -114,11 +115,10 @@ bool	Response::sendResponse() {
 	// close the connection and clear the connection object
 	if (this->_response_state == RESPONS_SERVED
 		|| this->_response_state == CONNECTION_CLOSED) {
-		return true;
+		this->is_served = true;
 	}
 
 	// response is not fully served yet
-	return false;
 }
 
 
