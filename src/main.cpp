@@ -1,6 +1,7 @@
 #include "Core_modules/Webserv/Definitions/Webserv.hpp"
 #include "HTTP_request_parser/Definitions/Request.hpp"
 #include "Process_request/Definitions/ProcessRequest.hpp"
+#include "Response_builder/Exceptions/ResponseExceptions.hpp"
 
 
 int main(int argc, char** argv) {
@@ -47,7 +48,16 @@ int main(int argc, char** argv) {
 
 				// serve request if ready or malformed
 				if (client_connection->request.isRequestState(READY_TO_SERVE)) {
+					try {
 
+						if (client_connection->response.sendResponse()) {
+							// clear connection
+						}
+
+					} catch (ClientSocketErrorException& e) {
+						std::cerr << e.what() << '\n';
+						return 3;
+					}
 				}
 
 				// else keep on parsing the incoming request

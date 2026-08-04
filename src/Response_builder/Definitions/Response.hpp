@@ -3,6 +3,7 @@
 #include "../../Core_modules/Typedef.hpp"
 #include "../../Config_parser/Parser/Definitions/Directives.hpp"
 #include "../../Core_modules/HTTPStatus.hpp"
+#include "../Exceptions/ResponseExceptions.hpp"
 #include <cstddef>
 #include <fstream>
 
@@ -12,7 +13,14 @@ class ClientConnection;
 class Response {
 private:
 	enum ResponseState {
-		DISK_FILE, STAGED_BUFFER
+		DISK_FILE, BUILT_BODY,
+		NAKED_HEADERS, RESPONS_SERVED,
+		CONNECTION_CLOSED
+	};
+
+	enum DiskFileState {
+		STAGED_BUFFER,
+		STAGED_BUFFER_SENT,
 	};
 
 private:
@@ -20,6 +28,8 @@ private:
 	ClientConnection*	_client_connection;
 
 	ResponseState		_response_state;
+	DiskFileState		_disk_file_state;
+
 	size_t				_bytes_sent;
 	String				_staging_buffer;
 	std::ifstream		_file_to_send;
@@ -38,7 +48,7 @@ public:
 
 	// INFO: api
 	void	initializeResponseObject();
-	void	sendResponse();
+	bool	sendResponse();
 	bool	openFileToSend(const String& file_name);
 	void	appendHeaders(const String& key, const String& value,
 						  bool last_header=false);
@@ -46,6 +56,7 @@ public:
 
 	// INFO: helper functions
 private:
+	void	sendStagedBufferPayload();
 	void	buildStatusLine(HTTPStatus HTTP_status);
 	String	getContentType();
 	String	getContentType(const String& file_name);

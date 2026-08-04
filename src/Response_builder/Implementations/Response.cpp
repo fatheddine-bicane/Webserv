@@ -45,7 +45,7 @@ void	Response::initializeResponseObject() {
 		// else build one
 		else {
 			this->_staging_buffer = this->_headers + buildErrorPage(HTTP_status);
-			this->_response_state = STAGED_BUFFER;
+			this->_response_state = BUILT_BODY;
 		}
 	}
 
@@ -62,7 +62,7 @@ void	Response::initializeResponseObject() {
 	// else there is no file to serve just headers
 	else {
 		this->_staging_buffer = this->_headers;
-		this->_response_state = STAGED_BUFFER;
+		this->_response_state = NAKED_HEADERS;
 	}
 
 }
@@ -83,46 +83,31 @@ void	Response::appendHeaders(const String& key, const String& value,
 
 
 
-void	Response::sendResponse() {
+bool	Response::sendResponse() {
 
 	switch (this->_response_state) {
+		case DISK_FILE:
+			// disk file handler
+			break;
 
+		case BUILT_BODY:
+		case NAKED_HEADERS:
+			sendStagedBufferPayload();
+			break;
+
+		// warning silencer
 		default: break;
 	}
 
+	// in the case of any error or response is sent,
+	// close the connection and clear the connection object
+	if (this->_response_state == RESPONS_SERVED
+		|| this->_response_state == CONNECTION_CLOSED) {
+		return true;
+	}
 
-
-
-
-	// // Safety check: ensure there is still data left to send
-	// if (this->_bytes_sent >= this->_response_str.length()) {
-	// 	return;
-	// }
-	//
-	// size_t bytes_remaining = this->_response_str.length() - this->_bytes_sent;
-	// const char* current_ptr = this->_response_str.c_str() + this->_bytes_sent;
-	//
-	// // Execute exactly ONE send() call per epoll_wait() event
-	// ssize_t sent = send(this->_client_fd, current_ptr, bytes_remaining, 0);
-	//
-	// if (sent > 0) {
-	// 	// The kernel accepted a chunk of data. Advance the offset.
-	// 	this->_bytes_sent += sent;
-	//
-	// 	// Check if the entire payload has now been transmitted
-	// 	if (this->_bytes_sent == this->_response_str.length()) {
-	// 		// Transition the connection state here 
-	// 		// (e.g., EPOLL_CTL_MOD back to EPOLLIN, or close the socket)
-	// 	}
-	// }
-	// else {
-	// 	// sent <= 0
-	// 	// Because epoll told us the socket was ready, a return of 0 (client disconnected)
-	// 	// or -1 (underlying socket error) means the connection is dead.
-	// 	// We do not check errno. We immediately drop the connection.
-	//
-	// 	// Execute socket cleanup and remove from epoll here.
-	// }
+	// response is not fully served yet
+	return false;
 }
 
 
@@ -132,6 +117,52 @@ void	Response::sendResponse() {
 
 // INFO: helpers
 // -----------------------------------------------------------
+
+
+
+void	Response::sendStagedBufferPayload() {
+	// return if there is no data left to send
+	if (this->_bytes_sent >= this->_staging_buffer.length()) {
+		return;
+	}
+
+	size_t bytes_remaining = this->_staging_buffer.length() - this->_bytes_sent;
+	const char* current_ptr = this->_staging_buffer.c_str() + this->_bytes_sent;
+
+	SOCKET client_fd = this->_client_connection->fd;
+	ssize_t sent = send(client_fd, current_ptr, bytes_remaining, 0);
+
+	if (sent > 0) {
+		this->_bytes_sent += sent;
+
+		// if the entire payload has now been transmitted
+		// mark the buffer as server
+		if (this->_bytes_sent == this->_staging_buffer.length()) {
+			// if serving a file mark the current buffer as sent
+			if (this->_response_state == DISK_FILE) {
+				this->_disk_file_state = STAGED_BUFFER_SENT;
+			}
+
+			// any other serving method means that the response was
+			// served nothing more to serve
+			else {
+				this->_response_state = RESPONS_SERVED;
+			}
+		}
+	}
+
+	// client disconnected
+	else if (sent == 0) {
+		this->_response_state = CONNECTION_CLOSED;
+	}
+
+	// underlying socket error
+	else {
+		throw ClientSocketErrorException();
+	}
+}
+
+
 
 void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 	// transform the status code from an enum to a string
