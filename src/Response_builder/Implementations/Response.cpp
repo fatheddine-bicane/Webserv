@@ -69,6 +69,9 @@ void	Response::initializeResponseObject() {
 
 
 
+// WARNING: in the case where there is no file to serve, the PprocessRequest
+// caller of this function should pass true to last element when append the
+// last header, otherwise its the Response object responsibility to pass it.
 void	Response::appendHeaders(const String& key, const String& value,
 								bool last_header) {
 	this->_headers += key + ": " + value + "\r\n";
