@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
 
 						if (client_connection->response.sendResponse()) {
 							// clear connection
+                            webserv.removeClient(client_connection);
 						}
 
 					} catch (ClientSocketErrorException& e) {

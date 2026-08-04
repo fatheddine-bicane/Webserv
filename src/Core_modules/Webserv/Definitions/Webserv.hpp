@@ -48,4 +48,5 @@ public:
 	void	getReadySockets();
 	Connection*	getConnectionObject(int index);
 	void	addNewClientConnection(Connection* connection);
+	void	removeClient(ClientConnection* client_connection);
 };
