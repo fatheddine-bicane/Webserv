@@ -27,6 +27,9 @@ int main(int argc, char** argv) {
 	} catch (SystemCallsFailedException& e) {
 		std::cout << e.what() << std::endl;
 		return 3;
+	} catch (std::runtime_error& e) {
+		std::cerr << e.what() << std::endl;
+		return 4;
 	}
 
 	while (true) {
