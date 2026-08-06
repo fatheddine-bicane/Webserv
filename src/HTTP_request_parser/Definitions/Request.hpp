@@ -34,6 +34,9 @@ enum RequestState {
 	START_LINE, HEADERS, BODY,
 	// determining the BODY reading method
 	DETERMINING_MESSAGE_BODY_LENGTH,
+
+	//ready to serve response
+	READY_TO_SERVE,
 	// request parsed and its correct
 	COMPLETE,
 	// request parsed and its not correct
@@ -102,6 +105,7 @@ public:
 	// INFO: api
 	void	attemptRequestParse();
 	bool	isRequestState(RequestState request_state);
+	void	setRequestState(RequestState new_request_state);
 
 
 private:

@@ -2,6 +2,8 @@
 
 #include "Connection.hpp"
 #include "../../../HTTP_request_parser/Definitions/Request.hpp"
+#include "../../../Response_builder/Definitions/Response.hpp"
+#include "../../../Server_multiplexing/Exceptions/SystemCallsExceptions.hpp"
 
 
 enum ConnectionState {
@@ -15,7 +17,10 @@ public:
 	Server*			server;
 	String&	ip_port;
 	Servers&	servers;
+	Response	response;
 
 public:
 	ClientConnection(SOCKET fd, String& ip_port, Servers& servers);
+
+	void	monitorSockerForOutput(EP_INSTANCE ep_instance);
 };

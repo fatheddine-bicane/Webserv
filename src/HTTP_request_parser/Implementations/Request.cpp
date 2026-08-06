@@ -51,7 +51,18 @@ bool	Request::isRequestState(RequestState request_state) {
 				|| this->_state == BODY);
 	}
 
+	else if (request_state == READY_TO_SERVE) {
+		return (this->_state == COMPLETE
+				|| this->_state == MALFORMED);
+	}
+
 	return (this->_state == request_state);
+}
+
+
+
+void	Request::setRequestState(RequestState new_request_state) {
+	this->_state = new_request_state;
 }
 
 // --------------------------------------------
@@ -92,7 +103,7 @@ void	Request::parseFieldLine() {
 
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
-		else if (!transferEncodingPresent() || !contentLengthPresent()) {
+		else if (!transferEncodingPresent() && !contentLengthPresent()) {
 			this->_state = COMPLETE;
 			return;
 		}

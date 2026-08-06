@@ -75,4 +75,13 @@ void	Webserv::addNewClientConnection(Connection* connection) {
 	}
 }
 
+
+
+void	Webserv::removeClient(ClientConnection* client_connection) {
+    epoll_ctl(this->epfd, EPOLL_CTL_DEL, client_connection->fd, NULL);
+    CloseSocket(client_connection->fd);
+    delete client_connection;
+}
+
+
 // -------------------------------------------------

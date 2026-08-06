@@ -13,8 +13,18 @@ Scanner::Scanner(int argc, char** argv) {
 
 	std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
 	if (!file.is_open()) {
-		throw std::runtime_error("Could not open file: " + path);
+		std::stringstream ss;
+		ss << RED << "Error:" << RESET
+		   << " could not open file: " << path;
+		throw std::runtime_error(ss.str());
+	} else if (file.peek() == std::fstream::traits_type::eof()){
+		std::stringstream ss;
+		ss << RED << "Error:" << RESET
+		   << " File: " <<  path << " is empthy";
+		throw std::runtime_error(ss.str());
 	}
+
+
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	this->source = new String(buffer.str());

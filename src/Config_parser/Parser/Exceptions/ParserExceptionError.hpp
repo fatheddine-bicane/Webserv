@@ -205,3 +205,17 @@ public:
 		this->_err = generateForematedError(token, error_type, source);
 	}
 };
+
+
+
+class NoLocationDirectiveFoundException : public ParserExceptionError {
+public:
+
+	NoLocationDirectiveFoundException(const Token& token, const String& source) {
+		String error_type = "A server block must contain at least "
+							"one location block directive to route "
+							"incoming traffic properly.";
+
+		this->_err = generateForematedError(token, error_type, source);
+	}
+};

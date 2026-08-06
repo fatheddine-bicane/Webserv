@@ -302,6 +302,10 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 		token = consume();
 	} // while match CONTEXT_END
 
+	if (!location_block_appered) {
+		throw NoLocationDirectiveFoundException(server_token, this->_source);
+	}
+
 	if (!server_name_parsed) {
 		server_name = "default";
 	}
