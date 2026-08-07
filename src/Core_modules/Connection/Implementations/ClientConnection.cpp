@@ -1,7 +1,7 @@
 #include <sys/epoll.h>
 
 #include "../Definitions/ClientConnection.hpp"
-#include "../../../Response_builder/Definitions/Response.hpp"
+#include "../../../HTTP_response_processer/Definitions/Response.hpp"
 #include "../../Typedef.hpp"
 
 ClientConnection::ClientConnection(SOCKET fd,

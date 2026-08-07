@@ -2,7 +2,7 @@
 
 #include "Connection.hpp"
 #include "../../../HTTP_request_parser/Definitions/Request.hpp"
-#include "../../../Response_builder/Definitions/Response.hpp"
+#include "../../../HTTP_response_processer/Definitions/Response.hpp"
 #include "../../../Server_multiplexing/Exceptions/SystemCallsExceptions.hpp"
 
 

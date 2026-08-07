@@ -11,7 +11,7 @@
 #include "../../../Config_parser/Parser/Definitions/Parser.hpp"
 #include "../../../Config_parser/Scanner/Definitions/Token.hpp"
 #include "../../../Server_multiplexing/Definitions/ServerMultiplexing.hpp"
-#include "../../../Response_builder/Exceptions/ResponseExceptions.hpp"
+#include "../../../HTTP_response_processer/Exceptions/ResponseExceptions.hpp"
 
 #include "../../Connection/Definitions/Connection.hpp"
 #include "../../Connection/Definitions/ServerConnection.hpp"
