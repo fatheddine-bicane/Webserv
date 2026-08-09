@@ -1,6 +1,8 @@
 #include "../Definitions/ProcessRequest.hpp"
 #include "../Exceptions/ProcessRequestException.hpp"
+#include <algorithm>
 #include <cstddef>
+#include <vector>
 
 
 // INFO: constructor
@@ -76,6 +78,11 @@ void	ProcessRequest::processCGIRequest() {
 	std::vector<String> env;
 
 	setPathEnvVariables(env);
+	setHeadersEnvVariables(env);
+
+}
+
+
 
 void	ProcessRequest::setPathEnvVariables(std::vector<String>& env) {
 	String& url = this->_request.target_resource;
@@ -114,6 +121,35 @@ void	ProcessRequest::setPathEnvVariables(std::vector<String>& env) {
 		// set the path info variable
 		String path_info = url.substr(this->_extention_pos);
 		env.push_back("PATH_INFO=" + path_info);
+	}
+}
+
+
+
+void	ProcessRequest::setHeadersEnvVariables(std::vector<String>& env) {
+	Headers::iterator header = this->_request.headers.begin();
+	Headers::iterator headers_end = this->_request.headers.end();
+	for (; header != headers_end; header++) {
+		if (header->first == "content-length") {
+			env.push_back("CONTENT_LENGTH=" + header->second);
+		} else if (header->first == "content-type") {
+			env.push_back("CONTENT_TYPE=" + header->second);
+		} else {
+			String header_name = header->first;
+
+			// capitalize the header name
+			std::transform(header_name.begin(), header_name.end(),
+						   header_name.begin(), ::toupper);
+
+			// replace hyphen with underscore
+			size_t hyphen_pos = header_name.find('-');
+			if (hyphen_pos != String::npos) {
+				header_name[hyphen_pos] = '_';
+			}
+
+			// push the newly created env variable
+			env.push_back("HTTP_" + header_name + '=' + header->second);
+		}
 	}
 }
 

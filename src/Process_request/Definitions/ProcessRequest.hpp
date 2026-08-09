@@ -32,6 +32,7 @@ private:
 	// cgi
 	void	processCGIRequest();
 	void	setPathEnvVariables(std::vector<String>& env);
+	void	setHeadersEnvVariables(std::vector<String>& env);
 	bool	isCGIRequest();
 
 
