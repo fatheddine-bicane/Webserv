@@ -9,6 +9,10 @@ private:
 	Server&		_server;
 	Location*	_location;
 
+	// cgi
+	String		_interpreter;
+	size_t		_extention_pos;
+
 
 public:
 	// INFO: constructor
@@ -22,6 +26,12 @@ public:
 
 
 private:
+	// cgi
+	void	processCGIRequest();
+	bool	isCGIRequest();
+
+
+
 	void	processGetRequest();
 	void	processPostRequest();
 	void	processDeleteRequest();
