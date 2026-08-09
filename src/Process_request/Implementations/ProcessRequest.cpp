@@ -73,8 +73,48 @@ void	ProcessRequest::processRequest() {
 
 
 void	ProcessRequest::processCGIRequest() {
+	std::vector<String> env;
 
+	setPathEnvVariables(env);
 
+void	ProcessRequest::setPathEnvVariables(std::vector<String>& env) {
+	String& url = this->_request.target_resource;
+
+	// set the script name variable
+	String script_name = url.substr(0, this->_extention_pos);
+	env.push_back("SCRIPT_NAME=" + script_name);
+
+	// url contains the script name alone
+	if (this->_extention_pos == url.length()) {
+		return;
+	}
+
+	size_t query_pos = url.find_first_of('?');
+
+	// there is a query string
+	if (query_pos != String::npos) {
+
+		// there is path info
+		if (this->_extention_pos != query_pos) {
+			// set the path info variable
+			String path_info = url.substr(this->_extention_pos, query_pos - this->_extention_pos);
+			env.push_back("PATH_INFO=" + path_info);
+		}
+
+		// set the query string variable
+		String query_string = url.substr(query_pos + 1);
+		env.push_back("QUERY_STRING=" + query_string);
+	}
+
+	// there is only a path info
+	else {
+		// empthy QUERY_STRING according to cgi rfc
+		env.push_back("QUERY_STRING=");
+
+		// set the path info variable
+		String path_info = url.substr(this->_extention_pos);
+		env.push_back("PATH_INFO=" + path_info);
+	}
 }
 
 

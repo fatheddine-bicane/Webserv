@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../../HTTP_request_parser/Definitions/Request.hpp"
+#include <cstddef>
+#include <iterator>
+#include <vector>
 
 
 class ProcessRequest {
@@ -28,6 +31,7 @@ public:
 private:
 	// cgi
 	void	processCGIRequest();
+	void	setPathEnvVariables(std::vector<String>& env);
 	bool	isCGIRequest();
 
 
