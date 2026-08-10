@@ -40,7 +40,9 @@ enum RequestState {
 	// request parsed and its correct
 	COMPLETE,
 	// request parsed and its not correct
-	MALFORMED
+	MALFORMED,
+	// cgi request
+	CGI
 };
 
 

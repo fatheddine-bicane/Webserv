@@ -65,6 +65,13 @@ int main(int argc, char** argv) {
 					}
 				}
 
+
+				// cgi pipe reading/sending
+				else if (client_connection->request.isRequestState(CGI)) {
+					// handle cgi pipe reading here
+					continue;
+				}
+
 				// else keep on parsing the incoming request
 				else {
 					client_connection->request.attemptRequestParse();
@@ -75,8 +82,9 @@ int main(int argc, char** argv) {
 					}
 
 					// else processes request
-					ProcessRequest process_request(client_connection->request, *client_connection->server);
-					process_request.processRequest();
+                    ProcessRequest process_request(client_connection->request,
+                                                   *client_connection->server, client_connection);
+                    process_request.processRequest();
 
 					if (client_connection->request.isRequestState(READY_TO_SERVE)) {
 

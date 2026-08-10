@@ -2,15 +2,19 @@
 #include "../Exceptions/ProcessRequestException.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <sys/_types/_pid_t.h>
+#include <unistd.h>
 #include <vector>
 
 
 // INFO: constructor
 // -----------------------------------------------------------
 
-ProcessRequest::ProcessRequest(Request& request, Server& server)
+ProcessRequest::ProcessRequest(Request& request, Server& server,
+							   ClientConnection& client_connection)
 	: _request(request),
-	  _server(server) {
+	  _server(server),
+	  _client_connection(client_connection) {
 	this->_location = request.location;
 }
 
@@ -27,51 +31,92 @@ void	ProcessRequest::processRequest() {
 		return;
 	}
 
-	else {
-		try {
+	resolveFilePath();
 
-			if (isCGIRequest()) {
-				// handle cgi
-				processCGIRequest();
-				return;
-			}
+	try {
 
-
-			// NOTE: each handler should mark there request state
-			// as 'COMPLETE' in case of success and in the case of
-			// failure mark the request state 'MALFORMED' using the
-			// the exposed setRequestState() method, and set the
-			// status code to the right HTTP status code and throw
-			// the 'ProcessRequestException' exception
-			switch (this->_request.method) {
-				case GET:
-					// handle get
-					break;
-
-				case POST:
-					// handle post
-					break;
-
-				case DELETE:
-					// handle delete
-					break;
-
-				case PUT:
-					// handle put
-					break;
-			}
+		if (isCGIRequest()) {
+			// handle cgi
+			processCGIRequest();
+			this->_request.setRequestState(CGI);
+			return;
 		}
 
-		// handler function couldnt process the request
-		catch (ProcessRequestException& e) {
-			// handl error
-			this->_request.status_code = e.status_code;
-			this->_request.setRequestState(MALFORMED);
+
+		// NOTE: each handler should mark there request state
+		// as 'COMPLETE' in case of success and in the case of
+		// failure mark the request state 'MALFORMED' using the
+		// the exposed setRequestState() method, and set the
+		// status code to the right HTTP status code and throw
+		// the 'ProcessRequestException' exception
+		switch (this->_request.method) {
+			case GET:
+				// handle get
+				break;
+
+			case POST:
+				// handle post
+				break;
+
+			case DELETE:
+				// handle delete
+				break;
+
+			case PUT:
+				// handle put
+				break;
 		}
+	}
+
+	// handler function couldnt process the request
+	catch (ProcessRequestException& e) {
+		// handl error
+		this->_request.status_code = e.status_code;
+		this->_request.setRequestState(MALFORMED);
 	}
 }
 
 // -----------------------------------------------------------
+
+
+
+void	ProcessRequest::resolveFilePath() {
+	// strip the query string if it exists
+	String clean_uri = this->_client_connection.request.target_resource;
+
+	size_t query_pos = clean_uri.find('?');
+	if (query_pos != String::npos) {
+		clean_uri = clean_uri.substr(0, query_pos);
+	}
+
+	// ROOT directive gets priority
+	if (!this->_location->shared_directives.root.empty()) {
+		this->_file_path = this->_location->shared_directives.root + clean_uri;
+	} 
+	// ALIAS directive fallback
+	else if (!this->_location->alias.empty()) {
+		String uri_remainder;
+
+		// Strip the matched location path from the URI
+		if (clean_uri.find(this->_location->path) == 0) {
+			uri_remainder = clean_uri.substr(this->_location->path.length());
+		} else {
+			uri_remainder = clean_uri; 
+		}
+
+		this->_file_path = this->_location->alias + uri_remainder;
+	}
+
+
+	// WARNING: this needs to be adjusted to force atleast one directive 
+	// Default fallback
+	else {
+		this->_file_path = clean_uri;
+	}
+
+}
+
+
 
 
 void	ProcessRequest::processCGIRequest() {
@@ -79,6 +124,22 @@ void	ProcessRequest::processCGIRequest() {
 
 	setPathEnvVariables(env);
 	setHeadersEnvVariables(env);
+
+	// create a pipe
+	PIPE fds;
+	if (!IsValidPipe(pipe(fds))) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	this->_client_connection.pid = fork();
+
+	if (isChildProcess(this->_client_connection.pid)) {
+
+	}
+
+	else if (isParentProcess(this->_client_connection.pid)) {
+
+	}
 
 }
 
