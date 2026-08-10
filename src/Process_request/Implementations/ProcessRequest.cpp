@@ -2,7 +2,9 @@
 #include "../Exceptions/ProcessRequestException.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <sys/_types/_pid_t.h>
+#include <sys/fcntl.h>
 #include <unistd.h>
 #include <vector>
 
@@ -134,6 +136,45 @@ void	ProcessRequest::processCGIRequest() {
 	this->_client_connection.pid = fork();
 
 	if (isChildProcess(this->_client_connection.pid)) {
+		// if there is a body file dup the stdin
+		if (!this->_request.tmp_body_file_name.empty()) {
+			File body_file = open(this->_request.tmp_body_file_name.c_str(), O_RDONLY);
+			if (body_file == -1 || dup2(body_file, STDIN_FILENO)) {
+				std::exit(EXIT_FAILURE);
+			}
+			close(body_file);
+		}
+
+		// dup the stdout
+		if (dup2(fds[1], STDOUT_FILENO) == -1) {
+			std::exit(EXIT_FAILURE);
+		}
+
+		close(fds[0]);
+		close(fds[1]);
+
+
+		// arguments
+		char* args[2] = {
+			const_cast<char*>(this->_file_path.c_str()),
+			NULL
+		};
+
+		// env variables
+		char* env_variables[env.size() + 1];
+		for (int i = 0; i < env.size(); i++) {
+			env_variables[i] = const_cast<char*>(env[i].c_str());
+		}
+		env_variables[env.size()] = NULL;
+
+		if (this->_interpreter == "python3") {
+			execve(PYTHON_INTERPRETER, args, env_variables);
+		} else if (this->_interpreter == "node") {
+			execve(NODE_INTERPRETER, args, env_variables);
+		}
+
+		// fallback for execve
+		std::exit(EXIT_FAILURE);
 
 	}
 
