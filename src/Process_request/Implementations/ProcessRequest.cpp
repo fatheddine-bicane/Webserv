@@ -266,28 +266,36 @@ bool	ProcessRequest::isCGIRequest() {
         path[i] = std::tolower(static_cast<unsigned char>(path[i]));
     }
 
+	std::map<String, String>::iterator cgi_pass;
     // search for Python extension followed by end-of-string or '/' (PATH_INFO)
     size_t pyPos = path.find(".py");
-    while (pyPos != String::npos) {
-        if (pyPos + 3 == path.length() || path[pyPos + 3] == '/') {
-            this->_interpreter = "python3";
-			this->_extention_pos = pyPos + 3;
-            return true;
-        }
-        pyPos = path.find(".py", pyPos + 1);
-    }
+	cgi_pass = this->_location->cgi_pass.find(".py");
+	if (cgi_pass != this->_location->cgi_pass.end()) {
+		while (pyPos != String::npos) {
+			if (pyPos + 3 == path.length() || path[pyPos + 3] == '/') {
+				this->_interpreter = "python3";
+				this->_extention_pos = pyPos + 3;
+				return true;
+			}
+			pyPos = path.find(".py", pyPos + 1);
+		}
+	}
 
     // else search for JavaScript extension followed by end-of-string or '/' (PATH_INFO)
-    size_t jsPos = path.find(".js");
-    while (jsPos != String::npos) {
-        if (jsPos + 3 == path.length() || path[jsPos + 3] == '/') {
-            this->_interpreter = "node";
-			this->_extention_pos = jsPos + 3;
-            return true;
-        }
-        jsPos = path.find(".js", jsPos + 1);
-    }
+	cgi_pass = this->_location->cgi_pass.find(".js");
+	if (cgi_pass != this->_location->cgi_pass.end()) {
+		size_t jsPos = path.find(".js");
+		while (jsPos != String::npos) {
+			if (jsPos + 3 == path.length() || path[jsPos + 3] == '/') {
+				this->_interpreter = "node";
+				this->_extention_pos = jsPos + 3;
+				return true;
+			}
+			jsPos = path.find(".js", jsPos + 1);
+		}
+	}
 
-    return false;
+	// requested cgi is not defined in the cgi_pass directive in the location
+	throw ProcessRequestException(NotFound);
 }
 
