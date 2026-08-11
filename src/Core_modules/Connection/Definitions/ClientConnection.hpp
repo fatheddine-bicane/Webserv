@@ -20,8 +20,9 @@ public:
 	Servers&		servers;
 	Response		response;
 
-	// if the request is cgi to prevent zombie child process
+	// if the request is cgi
 	pid_t			pid;
+	File			pipe_read_end;
 
 public:
 	ClientConnection(SOCKET fd, String& ip_port, Servers& servers);

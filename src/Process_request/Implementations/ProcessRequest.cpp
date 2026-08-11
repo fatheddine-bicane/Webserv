@@ -1,10 +1,12 @@
 #include "../Definitions/ProcessRequest.hpp"
 #include "../Exceptions/ProcessRequestException.hpp"
 #include <algorithm>
+#include <csignal>
 #include <cstddef>
 #include <cstdlib>
 #include <sys/_types/_pid_t.h>
 #include <sys/fcntl.h>
+#include <sys/signal.h>
 #include <unistd.h>
 #include <vector>
 
@@ -176,6 +178,28 @@ void	ProcessRequest::processCGIRequest() {
 	}
 
 	else if (isParentProcess(this->_client_connection.pid)) {
+		close(fds[1]);
+		this->_client_connection.pipe_read_end = fds[0];
+
+		int flags = fcntl(fds[0], F_GETFL, 0);
+		fcntl(fds[0], F_SETFL, flags | O_NONBLOCK);
+
+		struct epoll_event event;
+		std::memset(&event, 0, sizeof(event));
+
+		event.events = EPOLLIN;
+		event.data.ptr = this->_client_connection;
+
+		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_ADD, fds[0], &event) == -1) {
+			// remove the cgi process and close the read end of the pipe
+			kill(this->_client_connection.pid, SIGKILL);
+			waitpid(this->_client_connection.pid, NULL, 0);
+			close(fds[0]);
+
+			throw ProcessRequestException(InternalServerError);
+		}
+
+		// TODO: maybe change the state to reading cgi
 
 	}
 
