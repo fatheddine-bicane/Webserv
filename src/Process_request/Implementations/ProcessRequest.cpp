@@ -153,9 +153,10 @@ void	ProcessRequest::processCGIRequest() {
 		close(fds[0]);
 		close(fds[1]);
 
-
 		// arguments
-		char* args[2] = {
+		String interpreter = this->_location->cgi_pass[this->_interpreter];
+		char* args[3] = {
+			const_cast<char*>(interpreter.c_str()),
 			const_cast<char*>(this->_file_path.c_str()),
 			NULL
 		};
@@ -167,11 +168,7 @@ void	ProcessRequest::processCGIRequest() {
 		}
 		env_variables[env.size()] = NULL;
 
-		if (this->_interpreter == "python3") {
-			execve(PYTHON_INTERPRETER, args, env_variables);
-		} else if (this->_interpreter == "node") {
-			execve(NODE_INTERPRETER, args, env_variables);
-		}
+		execve(interpreter.c_str(), args, env_variables);
 
 		// fallback for execve
 		std::exit(EXIT_FAILURE);

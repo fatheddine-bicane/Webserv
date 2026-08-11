@@ -6,9 +6,6 @@
 #include <iterator>
 #include <vector>
 
-#define PYTHON_INTERPRETER "/usr/bin/python3"
-#define NODE_INTERPRETER "/usr/bin/node"
-
 
 class ProcessRequest {
 private:
