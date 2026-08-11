@@ -4,7 +4,6 @@
 #include <csignal>
 #include <cstddef>
 #include <cstdlib>
-#include <sys/_types/_pid_t.h>
 #include <sys/fcntl.h>
 #include <sys/signal.h>
 #include <unistd.h>
@@ -140,69 +139,11 @@ void	ProcessRequest::processCGIRequest() {
 	this->_client_connection.pid = fork();
 
 	if (isChildProcess(this->_client_connection.pid)) {
-		// if there is a body file dup the stdin
-		if (!this->_request.tmp_body_file_name.empty()) {
-			File body_file = open(this->_request.tmp_body_file_name.c_str(), O_RDONLY);
-			if (body_file == -1 || dup2(body_file, STDIN_FILENO)) {
-				std::exit(EXIT_FAILURE);
-			}
-			close(body_file);
-		}
-
-		// dup the stdout
-		if (dup2(fds[1], STDOUT_FILENO) == -1) {
-			std::exit(EXIT_FAILURE);
-		}
-
-		close(fds[0]);
-		close(fds[1]);
-
-		// arguments
-		String interpreter = this->_location->cgi_pass[this->_interpreter];
-		char* args[3] = {
-			const_cast<char*>(interpreter.c_str()),
-			const_cast<char*>(this->_file_path.c_str()),
-			NULL
-		};
-
-		// env variables
-		char* env_variables[env.size() + 1];
-		for (int i = 0; i < env.size(); i++) {
-			env_variables[i] = const_cast<char*>(env[i].c_str());
-		}
-		env_variables[env.size()] = NULL;
-
-		execve(interpreter.c_str(), args, env_variables);
-
-		// fallback for execve
-		std::exit(EXIT_FAILURE);
-
+		setUpChildProcess(fds, env);
 	}
 
 	else if (isParentProcess(this->_client_connection.pid)) {
-		close(fds[1]);
-		this->_client_connection.pipe_read_end = fds[0];
-
-		int flags = fcntl(fds[0], F_GETFL, 0);
-		fcntl(fds[0], F_SETFL, flags | O_NONBLOCK);
-
-		struct epoll_event event;
-		std::memset(&event, 0, sizeof(event));
-
-		event.events = EPOLLIN;
-		event.data.ptr = this->_client_connection;
-
-		if (epoll_ctl(this->_epoll_fd, EPOLL_CTL_ADD, fds[0], &event) == -1) {
-			// remove the cgi process and close the read end of the pipe
-			kill(this->_client_connection.pid, SIGKILL);
-			waitpid(this->_client_connection.pid, NULL, 0);
-			close(fds[0]);
-
-			throw ProcessRequestException(InternalServerError);
-		}
-
-		// TODO: maybe change the state to reading cgi
-
+		setUpParentProcess(fds);
 	}
 
 }
@@ -262,6 +203,8 @@ void	ProcessRequest::setPathEnvVariables(std::vector<String>& env) {
 		case DELETE:
 			request_method += "DELETE";
 			break;
+
+		default: break;
 	}
 	env.push_back(request_method);
 }
@@ -292,6 +235,72 @@ void	ProcessRequest::setHeadersEnvVariables(std::vector<String>& env) {
 			// push the newly created env variable
 			env.push_back("HTTP_" + header_name + '=' + header->second);
 		}
+	}
+}
+
+
+
+void	ProcessRequest::setUpChildProcess(PIPE& fds, std::vector<String>& env) {
+	// if there is a body file dup the stdin
+	if (!this->_request.tmp_body_file_name.empty()) {
+		File body_file = open(this->_request.tmp_body_file_name.c_str(), O_RDONLY);
+		if (body_file == -1 || dup2(body_file, STDIN_FILENO)) {
+			std::exit(EXIT_FAILURE);
+		}
+		close(body_file);
+	}
+
+	// dup the stdout
+	if (dup2(fds[1], STDOUT_FILENO) == -1) {
+		std::exit(EXIT_FAILURE);
+	}
+
+	close(fds[0]);
+	close(fds[1]);
+
+	// arguments
+	String interpreter = this->_location->cgi_pass[this->_interpreter];
+	char* args[3] = {
+		const_cast<char*>(interpreter.c_str()),
+		const_cast<char*>(this->_file_path.c_str()),
+		NULL
+	};
+
+	// env variables
+	char* env_variables[env.size() + 1];
+	for (size_t i = 0; i < env.size(); i++) {
+		env_variables[i] = const_cast<char*>(env[i].c_str());
+	}
+	env_variables[env.size()] = NULL;
+
+	execve(interpreter.c_str(), args, env_variables);
+
+	// fallback for execve
+	std::exit(EXIT_FAILURE);
+}
+
+
+
+void	ProcessRequest::setUpParentProcess(PIPE& fds) {
+	close(fds[1]);
+	this->_client_connection.pipe_read_end = fds[0];
+
+	int flags = fcntl(fds[0], F_GETFL, 0);
+	fcntl(fds[0], F_SETFL, flags | O_NONBLOCK);
+
+	struct epoll_event event;
+	std::memset(&event, 0, sizeof(event));
+
+	event.events = EPOLLIN;
+	event.data.ptr = &this->_client_connection;
+
+	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, fds[0], &event) == -1) {
+		// remove the cgi process and close the read end of the pipe
+		kill(this->_client_connection.pid, SIGKILL);
+		waitpid(this->_client_connection.pid, NULL, 0);
+		close(fds[0]);
+
+		throw ProcessRequestException(InternalServerError);
 	}
 }
 

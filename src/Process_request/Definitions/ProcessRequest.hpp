@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <iterator>
 #include <vector>
+#include <sys/epoll.h>
+#include <sys/wait.h>
 
 
 class ProcessRequest {
@@ -45,6 +47,8 @@ private:
 	void	processCGIRequest();
 	void	setPathEnvVariables(std::vector<String>& env);
 	void	setHeadersEnvVariables(std::vector<String>& env);
+	void	setUpChildProcess(PIPE& fds, std::vector<String>& env);
+	void	setUpParentProcess(PIPE& fds);
 	bool	isCGIRequest();
 
 
