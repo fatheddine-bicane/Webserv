@@ -221,6 +221,23 @@ void	ProcessRequest::setPathEnvVariables(std::vector<String>& env) {
 		String path_info = url.substr(this->_extention_pos);
 		env.push_back("PATH_INFO=" + path_info);
 	}
+
+	// request method
+	String request_method = "REQUEST_METHOD=";
+	switch (this->_request.method) {
+		case GET:
+			request_method += "GET";
+			break;
+
+		case POST:
+			request_method += "POST";
+			break;
+
+		case DELETE:
+			request_method += "DELETE";
+			break;
+	}
+	env.push_back(request_method);
 }
 
 
