@@ -17,6 +17,7 @@ private:
 	// cgi
 	String		_interpreter;
 	size_t		_extention_pos;
+	EP_INSTANCE	_epfd;
 
 
 	String		_file_path;
@@ -24,7 +25,8 @@ private:
 public:
 	// INFO: constructor
 	ProcessRequest(Request& request, Server& server,
-				   ClientConnection& client_connection);
+				   ClientConnection& client_connection,
+				   EP_INSTANCE epfd);
 
 
 public:

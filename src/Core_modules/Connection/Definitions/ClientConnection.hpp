@@ -4,7 +4,6 @@
 #include "../../../HTTP_request_parser/Definitions/Request.hpp"
 #include "../../../HTTP_response_processer/Definitions/Response.hpp"
 #include "../../../Server_multiplexing/Exceptions/SystemCallsExceptions.hpp"
-#include <sys/_types/_pid_t.h>
 
 
 enum ConnectionState {
