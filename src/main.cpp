@@ -68,6 +68,10 @@ int main(int argc, char** argv) {
 
 				// cgi pipe reading/sending
 				else if (client_connection->request.isRequestState(CGI)) {
+					switch (client_connection->request.getRequestState()) {
+						case MONITORE_PIPE:
+							break;
+					}
 					// handle cgi pipe reading here
 					continue;
 				}

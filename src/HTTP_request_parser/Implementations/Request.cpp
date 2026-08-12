@@ -56,6 +56,10 @@ bool	Request::isRequestState(RequestState request_state) {
 				|| this->_state == MALFORMED);
 	}
 
+	else if (request_state == CGI) {
+		return (this->_state == MONITORE_PIPE);
+	}
+
 	return (this->_state == request_state);
 }
 
@@ -63,6 +67,12 @@ bool	Request::isRequestState(RequestState request_state) {
 
 void	Request::setRequestState(RequestState new_request_state) {
 	this->_state = new_request_state;
+}
+
+
+
+RequestState	Request::getRequestState() {
+	return this->_state;
 }
 
 // --------------------------------------------
