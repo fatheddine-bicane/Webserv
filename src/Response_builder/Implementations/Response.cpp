@@ -62,6 +62,11 @@ void	Response::initializeResponseObject() {
 		this->_response_state = DISK_FILE;
 	}
 
+	// respond with a directory listing
+	else if (this->_response_state == DIRECTORY_LISTING_HTML_BODY) {
+		this->_staging_buffer = this->_headers + this->_staging_buffer;
+	} 
+
 	// else there is no file to serve just headers
 	else {
 		this->_staging_buffer = this->_headers;
@@ -120,6 +125,15 @@ void	Response::sendResponse() {
 
 	// response is not fully served yet
 }
+
+
+
+void	Response::appendDirectoryListeningBody(const String& body) {
+	this->_response_state = DIRECTORY_LISTING_HTML_BODY;
+	this->_staging_buffer = body;
+}
+
+
 
 
 // -----------------------------------------------------------

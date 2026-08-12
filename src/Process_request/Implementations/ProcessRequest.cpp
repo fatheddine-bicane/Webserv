@@ -1,6 +1,9 @@
 #include "../Definitions/ProcessRequest.hpp"
 #include "../Exceptions/ProcessRequestException.hpp"
 #include <cstddef>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 
 // INFO: constructor
@@ -25,6 +28,9 @@ void	ProcessRequest::processRequest() {
 		return;
 	}
 
+	// mock	
+	resolveFilePath();
+
 	else {
 		try {
 
@@ -37,6 +43,7 @@ void	ProcessRequest::processRequest() {
 			switch (this->_request.method) {
 				case GET:
 					// handle get
+					processGetRequest();
 					break;
 
 				case POST:
@@ -63,3 +70,76 @@ void	ProcessRequest::processRequest() {
 }
 
 // -----------------------------------------------------------
+
+
+
+void	ProcessRequest::processGetRequest() {
+	// check if file exists and is readable
+	if (access(this->_file_path.c_str(), F_OK) == -1) {
+		throw ProcessRequestException(NotFound);
+	}
+	if (access(this->_file_path.c_str(), R_OK) == -1) {
+		throw ProcessRequestException(Forbidden);
+	}
+
+	struct stat info;
+	if (stat(this->_file_path.c_str(), &info) != 0) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	if (S_ISDIR(info.st_mode)) {
+		if (this->_location->shared_directives.autoindex) {
+			renderDirectoryListing();
+			this->_request.status_code = OK;
+			this->_request.setRequestState(COMPLETE);
+			return;
+		}
+
+		throw ProcessRequestException(Forbidden);
+	}
+
+	// file is a regular file, send it
+	else {
+		if (!this->_client_connection->openFileToSend(this->_file_path)) {
+			throw ProcessRequestException(InternalServerError);
+		}
+		this->client_connection->response.serve_file = true;
+		this->request.status_code = OK;
+		this->_request.setRequestState(COMPLETE);
+	}
+}
+
+void	ProcessRequest::renderDirectoryListing() {
+	DIR* directory = opendir(this->_file_path.c_str());
+	if (directory == NULL) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	String html;
+	html += "<!DOCTYPE html>\r\n";
+	html += "<html><head><title>Directory listing</title></head><body>\r\n";
+	html += "<h1>Index of " + this->_request.target_resource + "</h1>\r\n";
+	html += "<ul>\r\n";
+
+	struct dirent* entry;
+	while ((entry = readdir(directory)) != NULL) {
+		String name = entry->d_name;
+		if (name == "." || name == "..") {
+			continue;
+		}
+
+		html += "<li><a href=\"" + name + "\">" + name + "</a></li>\r\n";
+	}
+	closedir(directory);
+
+	html += "</ul>\r\n";
+	html += "</body></html>\r\n";
+
+	// set the response headers for the directory listing
+	std::stringstream size;
+	size << html.size();
+	this->_client_connection->response.appendHeader("Content-Length", size.str());
+	this->_client_connection->response.appendHeader("Content-Type", "text/html", true);
+
+	this->_client_connection->response.appendDirectoryListeningBody(html);
+}

@@ -9,7 +9,7 @@ private:
 	Server&		_server;
 	Location*	_location;
 
-
+	String		_file_path;
 public:
 	// INFO: constructor
 	ProcessRequest(Request& request, Server& server);
@@ -22,7 +22,12 @@ public:
 
 
 private:
+	void	resolveFilePath();
+
+	// get request helpers
 	void	processGetRequest();
+	void	renderDirectoryListing();
+
 	void	processPostRequest();
 	void	processDeleteRequest();
 	void	processPutRequest();
