@@ -27,8 +27,7 @@ private:
 public:
 	// INFO: constructor
 	ProcessRequest(Request& request, Server& server,
-				   ClientConnection& client_connection,
-				   EP_INSTANCE epfd);
+				   ClientConnection& client_connection);
 
 
 public:

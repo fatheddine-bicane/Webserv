@@ -6,6 +6,8 @@
 #include "../../../Server_multiplexing/Exceptions/SystemCallsExceptions.hpp"
 
 
+class ProcessRequest;
+
 enum ConnectionState {
 	KEEP_ALIVE, CLOSE
 };
@@ -18,6 +20,7 @@ public:
 	String&			ip_port;
 	Servers&		servers;
 	Response		response;
+	ProcessRequest*	process_request;
 
 	// if the request is cgi
 	pid_t			pid;
@@ -25,6 +28,7 @@ public:
 
 public:
 	ClientConnection(SOCKET fd, String& ip_port, Servers& servers);
+	~ClientConnection();
 
 	void	monitorSockerForOutput(EP_INSTANCE ep_instance);
 };

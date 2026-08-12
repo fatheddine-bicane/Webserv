@@ -82,12 +82,7 @@ int main(int argc, char** argv) {
 					}
 
 					// else processes request
-                    ProcessRequest process_request(client_connection->request,
-                                                   *client_connection->server,
-												   *client_connection,
-												   webserv.epfd);
-
-                    process_request.processRequest();
+                    client_connection->process_request->processRequest();
 
 					if (client_connection->request.isRequestState(READY_TO_SERVE)) {
 
