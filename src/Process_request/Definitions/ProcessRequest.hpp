@@ -35,6 +35,9 @@ public:
 	void	processRequest();
 	// send response
 
+	// cgi processors
+	void	monitoreCGIPipe(EP_INSTANCE epfd);
+
 
 private:
 	String	getFilePath();

@@ -43,7 +43,7 @@ enum RequestState {
 	MALFORMED,
 	// cgi request
 	CGI,
-	MONITORE_PIPE,
+	MONITORE_PIPE, READ_CGI_PIPE
 };
 
 

@@ -70,7 +70,15 @@ int main(int argc, char** argv) {
 				else if (client_connection->request.isRequestState(CGI)) {
 					switch (client_connection->request.getRequestState()) {
 						case MONITORE_PIPE:
+							client_connection->process_request->monitoreCGIPipe(webserv.epfd);
 							break;
+
+						case READ_CGI_PIPE:
+							break;
+
+
+						// evaluating CGI states only
+						default: break;
 					}
 					// handle cgi pipe reading here
 					continue;

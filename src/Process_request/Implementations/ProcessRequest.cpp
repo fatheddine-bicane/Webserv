@@ -79,6 +79,33 @@ void	ProcessRequest::processRequest() {
 	}
 }
 
+
+
+void	ProcessRequest::monitoreCGIPipe(EP_INSTANCE epfd) {
+	File pipe_read_end = this->_client_connection.pipe_read_end;
+
+
+	int flags = fcntl(pipe_read_end, F_GETFL, 0);
+	fcntl(pipe_read_end, F_SETFL, flags | O_NONBLOCK);
+
+	struct epoll_event event;
+	std::memset(&event, 0, sizeof(event));
+	event.events = EPOLLIN;
+	event.data.ptr = &this->_client_connection;
+
+	if (epoll_ctl(epfd, EPOLL_CTL_ADD, pipe_read_end, &event) == -1) {
+		// remove the cgi process and close the read end of the pipe
+		kill(this->_client_connection.pid, SIGKILL);
+		waitpid(this->_client_connection.pid, NULL, 0);
+		close(pipe_read_end);
+
+		this->_request.status_code = InternalServerError;
+		this->_request.setRequestState(MALFORMED);
+	}
+
+	this->_request.setRequestState(READ_CGI_PIPE);
+}
+
 // -----------------------------------------------------------
 
 
@@ -282,24 +309,6 @@ void	ProcessRequest::setUpChildProcess(PIPE& fds, std::vector<String>& env) {
 void	ProcessRequest::setUpParentProcess(PIPE& fds) {
 	close(fds[1]);
 	this->_client_connection.pipe_read_end = fds[0];
-
-	int flags = fcntl(fds[0], F_GETFL, 0);
-	fcntl(fds[0], F_SETFL, flags | O_NONBLOCK);
-
-	struct epoll_event event;
-	std::memset(&event, 0, sizeof(event));
-
-	event.events = EPOLLIN;
-	event.data.ptr = &this->_client_connection;
-
-	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, fds[0], &event) == -1) {
-		// remove the cgi process and close the read end of the pipe
-		kill(this->_client_connection.pid, SIGKILL);
-		waitpid(this->_client_connection.pid, NULL, 0);
-		close(fds[0]);
-
-		throw ProcessRequestException(InternalServerError);
-	}
 }
 
 
