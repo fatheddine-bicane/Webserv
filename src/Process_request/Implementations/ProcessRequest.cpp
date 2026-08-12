@@ -14,12 +14,10 @@
 // -----------------------------------------------------------
 
 ProcessRequest::ProcessRequest(Request& request, Server& server,
-							   ClientConnection& client_connection,
-							   EP_INSTANCE epfd)
+							   ClientConnection& client_connection)
 	: _request(request),
 	  _server(server),
-	  _client_connection(client_connection),
-	  _epfd(epfd) {
+	  _client_connection(client_connection) {
 	this->_location = request.location;
 }
 
