@@ -84,8 +84,6 @@ int main(int argc, char** argv) {
 						// evaluating CGI request states only
 						default: break;
 					}
-					// handle cgi pipe reading here
-					continue;
 				}
 
 				// else keep on parsing the incoming request

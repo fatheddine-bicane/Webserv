@@ -137,7 +137,8 @@ void	ProcessRequest::readCGIPipe() {
 	// error reading from pipe
 	else if (bytes_read < 0 && errno != EAGAIN) {
 		close(pipe_read_end);
-		throw ProcessRequestException(InternalServerError);
+		this->_request.status_code = InternalServerError;
+		this->_request.setRequestState(MALFORMED);
 	}
 }
 
@@ -169,7 +170,8 @@ void	ProcessRequest::readCGIHeaders(char* buffer, ssize_t bytes_read) {
 		std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
 								std::ios::binary | std::ios::app);
 		if (!tmp_file_stream.is_open()) {
-			throw ProcessRequestException(InternalServerError);
+			this->_request.status_code = InternalServerError;
+			this->_request.setRequestState(MALFORMED);
 		}
 
 		tmp_file_stream.write(body.c_str(), body.length());
@@ -187,7 +189,8 @@ void	ProcessRequest::readCGIBody(char* buffer, ssize_t bytes_read) {
 	std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
 							      std::ios::binary | std::ios::app);
 	if (!tmp_file_stream.is_open()) {
-		throw ProcessRequestException(InternalServerError);
+		this->_request.status_code = InternalServerError;
+		this->_request.setRequestState(MALFORMED);
 	}
 
 	tmp_file_stream.write(buffer, bytes_read);
