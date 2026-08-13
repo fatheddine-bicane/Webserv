@@ -74,10 +74,14 @@ int main(int argc, char** argv) {
 							break;
 
 						case READ_CGI_PIPE:
-							break;
+                            client_connection->process_request->readCGIPipe();
+                            break;
 
+						case PARSE_CGI_HEADERS:
+							client_connection->process_request->parseCGIHeaders();
+                            break;
 
-						// evaluating CGI states only
+						// evaluating CGI request states only
 						default: break;
 					}
 					// handle cgi pipe reading here

@@ -104,7 +104,96 @@ void	ProcessRequest::monitoreCGIPipe(EP_INSTANCE epfd) {
 	}
 
 	this->_request.setRequestState(READ_CGI_PIPE);
+	this->_cgi_state = READING_HEADERS;
 }
+
+
+
+void	ProcessRequest::readCGIPipe() {
+	File pipe_read_end = this->_client_connection.pipe_read_end;
+	char buffer[_4KB];
+	ssize_t bytes_read = read(pipe_read_end, buffer, sizeof(buffer) - 1);
+
+	if (bytes_read > 0) {
+		buffer[bytes_read] = '\0';
+
+		switch (this->_cgi_state) {
+			case READING_HEADERS:
+				readCGIHeaders(buffer, bytes_read);
+				break;
+
+			case READING_BODY:
+				readCGIBody(buffer, bytes_read);
+				break;
+		}
+	}
+
+	// no more data to read
+	else if (bytes_read == 0) {
+		close(pipe_read_end);
+		this->_request.setRequestState(PARSE_CGI_HEADERS);
+	}
+
+	// error reading from pipe
+	else if (bytes_read < 0 && errno != EAGAIN) {
+		close(pipe_read_end);
+		throw ProcessRequestException(InternalServerError);
+	}
+}
+
+
+
+void	ProcessRequest::readCGIHeaders(char* buffer, ssize_t bytes_read) {
+    this->_cgi_pipe_buffer.append(buffer, bytes_read);
+
+	// parse headers and body separator
+    size_t header_end = this->_cgi_pipe_buffer.find("\r\n\r\n");
+    size_t separator_len = 4;
+    if (header_end == String::npos) {
+        header_end = this->_cgi_pipe_buffer.find("\n\n");
+        separator_len = 2;
+    }
+
+	// headers not received fully
+    if (header_end == String::npos) {
+        return; 
+    }
+
+	// body parser
+	// extract and process headers
+	int seperator = (separator_len == 4) ? 2 : 1;
+    this->_cgi_headers = this->_cgi_pipe_buffer.substr(0, header_end + seperator);
+    String body = this->_cgi_pipe_buffer.substr(header_end + separator_len);
+
+    if (!body.empty()) {
+		std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
+								std::ios::binary | std::ios::app);
+		if (!tmp_file_stream.is_open()) {
+			throw ProcessRequestException(InternalServerError);
+		}
+
+		tmp_file_stream.write(body.c_str(), body.length());
+		tmp_file_stream.close();
+	}
+
+    this->_cgi_state = READING_BODY;
+    this->_cgi_pipe_buffer.clear();
+}
+
+
+
+void	ProcessRequest::readCGIBody(char* buffer, ssize_t bytes_read) {
+
+	std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
+							      std::ios::binary | std::ios::app);
+	if (!tmp_file_stream.is_open()) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	tmp_file_stream.write(buffer, bytes_read);
+	tmp_file_stream.close();
+}
+
 
 // -----------------------------------------------------------
 
@@ -171,6 +260,11 @@ void	ProcessRequest::processCGIRequest() {
 		setUpParentProcess(fds);
 	}
 
+
+	// save the cgi body file name i case its used
+	std::stringstream client_fd;
+	client_fd << this->_client_connection.fd;
+	this->_cgi_body_file_name = "./cgi-tmp-body/body_" + client_fd.str() + ".tmp";
 }
 
 
@@ -357,4 +451,5 @@ bool	ProcessRequest::isCGIRequest() {
 	// requested cgi is not defined in the cgi_pass directive in the location
 	throw ProcessRequestException(NotFound);
 }
+
 
