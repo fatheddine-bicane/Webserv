@@ -4,6 +4,8 @@
 #include <csignal>
 #include <cstddef>
 #include <cstdlib>
+#include <cctype>
+#include <sstream>
 #include <sys/fcntl.h>
 #include <sys/signal.h>
 #include <unistd.h>
@@ -18,7 +20,6 @@ ProcessRequest::ProcessRequest(Request& request, Server& server,
 	: _request(request),
 	  _server(server),
 	  _client_connection(client_connection) {
-	this->_location = request.location;
 }
 
 // -----------------------------------------------------------
@@ -212,21 +213,21 @@ void	ProcessRequest::resolveFilePath() {
 	}
 
 	// ROOT directive gets priority
-	if (!this->_location->shared_directives.root.empty()) {
-		this->_file_path = this->_location->shared_directives.root + clean_uri;
+	if (!this->_request.location->shared_directives.root.empty()) {
+		this->_file_path = this->_request.location->shared_directives.root + clean_uri;
 	} 
 	// ALIAS directive fallback
-	else if (!this->_location->alias.empty()) {
+	else if (!this->_request.location->alias.empty()) {
 		String uri_remainder;
 
 		// Strip the matched location path from the URI
-		if (clean_uri.find(this->_location->path) == 0) {
-			uri_remainder = clean_uri.substr(this->_location->path.length());
+		if (clean_uri.find(this->_request.location->path) == 0) {
+			uri_remainder = clean_uri.substr(this->_request.location->path.length());
 		} else {
 			uri_remainder = clean_uri; 
 		}
 
-		this->_file_path = this->_location->alias + uri_remainder;
+		this->_file_path = this->_request.location->alias + uri_remainder;
 	}
 
 
@@ -381,7 +382,7 @@ void	ProcessRequest::setUpChildProcess(PIPE& fds, std::vector<String>& env) {
 	close(fds[1]);
 
 	// arguments
-	String interpreter = this->_location->cgi_pass[this->_interpreter];
+	String interpreter = this->_request.location->cgi_pass[this->_interpreter];
 	char* args[3] = {
 		const_cast<char*>(interpreter.c_str()),
 		const_cast<char*>(this->_file_path.c_str()),
@@ -425,8 +426,8 @@ bool	ProcessRequest::isCGIRequest() {
 	std::map<String, String>::iterator cgi_pass;
     // search for Python extension followed by end-of-string or '/' (PATH_INFO)
     size_t pyPos = path.find(".py");
-	cgi_pass = this->_location->cgi_pass.find(".py");
-	if (cgi_pass != this->_location->cgi_pass.end()) {
+	cgi_pass = this->_request.location->cgi_pass.find(".py");
+	if (cgi_pass != this->_request.location->cgi_pass.end()) {
 		while (pyPos != String::npos) {
 			if (pyPos + 3 == path.length() || path[pyPos + 3] == '/') {
 				this->_interpreter = "python3";
@@ -438,8 +439,8 @@ bool	ProcessRequest::isCGIRequest() {
 	}
 
     // else search for JavaScript extension followed by end-of-string or '/' (PATH_INFO)
-	cgi_pass = this->_location->cgi_pass.find(".js");
-	if (cgi_pass != this->_location->cgi_pass.end()) {
+	cgi_pass = this->_request.location->cgi_pass.find(".js");
+	if (cgi_pass != this->_request.location->cgi_pass.end()) {
 		size_t jsPos = path.find(".js");
 		while (jsPos != String::npos) {
 			if (jsPos + 3 == path.length() || path[jsPos + 3] == '/') {

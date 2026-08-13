@@ -24,7 +24,6 @@ private:
 private:
 	Request&	_request;
 	Server&		_server;
-	Location*	_location;
 	ClientConnection&	_client_connection;
 
 	// cgi
