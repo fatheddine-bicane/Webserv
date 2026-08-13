@@ -42,7 +42,6 @@ void	ProcessRequest::processRequest() {
 		if (isCGIRequest()) {
 			// handle cgi
 			processCGIRequest();
-			this->_request.setRequestState(CGI);
 			return;
 		}
 
@@ -133,6 +132,7 @@ void	ProcessRequest::readCGIPipe() {
 	else if (bytes_read == 0) {
 		close(pipe_read_end);
 		this->_request.setRequestState(PARSE_CGI_HEADERS);
+		this->_client_connection.response.openFileToSend(this->_cgi_body_file_name);
 	}
 
 	// error reading from pipe
@@ -175,6 +175,8 @@ void	ProcessRequest::readCGIHeaders(char* buffer, ssize_t bytes_read) {
 			this->_request.setRequestState(MALFORMED);
 		}
 
+		this->_client_connection.response.serve_file = true;
+
 		tmp_file_stream.write(body.c_str(), body.length());
 		tmp_file_stream.close();
 	}
@@ -186,6 +188,7 @@ void	ProcessRequest::readCGIHeaders(char* buffer, ssize_t bytes_read) {
 
 
 void	ProcessRequest::readCGIBody(char* buffer, ssize_t bytes_read) {
+	this->_client_connection.response.serve_file = true;
 
 	std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
 							      std::ios::binary | std::ios::app);
@@ -262,6 +265,7 @@ void	ProcessRequest::processCGIRequest() {
 
 	else if (isParentProcess(this->_client_connection.pid)) {
 		setUpParentProcess(fds);
+		this->_request.setRequestState(MONITORE_PIPE);
 	}
 
 
@@ -367,7 +371,7 @@ void	ProcessRequest::setUpChildProcess(PIPE& fds, std::vector<String>& env) {
 	// if there is a body file dup the stdin
 	if (!this->_request.tmp_body_file_name.empty()) {
 		File body_file = open(this->_request.tmp_body_file_name.c_str(), O_RDONLY);
-		if (body_file == -1 || dup2(body_file, STDIN_FILENO)) {
+		if (body_file == -1 || dup2(body_file, STDIN_FILENO) == -1) {
 			std::exit(EXIT_FAILURE);
 		}
 		close(body_file);
@@ -455,5 +459,117 @@ bool	ProcessRequest::isCGIRequest() {
 	// requested cgi is not defined in the cgi_pass directive in the location
 	throw ProcessRequestException(NotFound);
 }
+
+
+void	ProcessRequest::parseCGIHeaders() {
+	std::istringstream header_stream(this->_cgi_headers);
+	String line;
+
+	this->_request.status_code = OK;
+
+	while (std::getline(header_stream, line)) {
+		if (line.empty()) {
+			break;
+		}
+
+		if (!line.empty() && line[line.size() - 1] == '\r') {
+			line.erase(line.size() - 1);
+		}
+
+		size_t colon_pos = line.find(':');
+		if (colon_pos == String::npos) {
+			continue;
+		}
+
+		String key = line.substr(0, colon_pos);
+		String value = line.substr(colon_pos + 1);
+
+		size_t start = key.find_first_not_of(" \t");
+		size_t end = key.find_last_not_of(" \t");
+		if (start != String::npos) {
+			key = key.substr(start, end - start + 1);
+		}
+
+		start = value.find_first_not_of(" \t");
+		end = value.find_last_not_of(" \t");
+		if (start == String::npos) {
+			value.clear();
+		} else {
+			value = value.substr(start, end - start + 1);
+		}
+
+		String lower_key = key;
+		std::transform(lower_key.begin(), lower_key.end(),
+					   lower_key.begin(), ::tolower);
+
+		if (lower_key == "status") {
+			String status_value = value;
+			size_t space_pos = status_value.find_first_of(" \t");
+			if (space_pos != String::npos) {
+				status_value = status_value.substr(0, space_pos);
+			}
+
+			if (!status_value.empty()) {
+				char* end_ptr = NULL;
+				long parsed_status = std::strtol(status_value.c_str(), &end_ptr, 10);
+				if (end_ptr != status_value.c_str()) {
+					switch (parsed_status) {
+						case 100: this->_request.status_code = Continue; break;
+						case 101: this->_request.status_code = SwitchingProtocols; break;
+						case 200: this->_request.status_code = OK; break;
+						case 201: this->_request.status_code = Created; break;
+						case 202: this->_request.status_code = Accepted; break;
+						case 204: this->_request.status_code = NoContent; break;
+						case 206: this->_request.status_code = PartialContent; break;
+						case 301: this->_request.status_code = MovedPermanently; break;
+						case 302: this->_request.status_code = Found; break;
+						case 303: this->_request.status_code = SeeOther; break;
+						case 304: this->_request.status_code = NotModified; break;
+						case 307: this->_request.status_code = TemporaryRedirect; break;
+						case 308: this->_request.status_code = PermanentRedirect; break;
+						case 400: this->_request.status_code = BadRequest; break;
+						case 401: this->_request.status_code = Unauthorized; break;
+						case 403: this->_request.status_code = Forbidden; break;
+						case 404: this->_request.status_code = NotFound; break;
+						case 405: this->_request.status_code = MethodNotAllowed; break;
+						case 408: this->_request.status_code = RequestTimeout; break;
+						case 409: this->_request.status_code = Conflict; break;
+						case 410: this->_request.status_code = Gone; break;
+						case 411: this->_request.status_code = LengthRequired; break;
+						case 413: this->_request.status_code = PayloadTooLarge; break;
+						case 414: this->_request.status_code = URITooLong; break;
+						case 415: this->_request.status_code = UnsupportedMediaType; break;
+						case 417: this->_request.status_code = ExpectationFailed; break;
+						case 426: this->_request.status_code = UpgradeRequired; break;
+						case 500: this->_request.status_code = InternalServerError; break;
+						case 501: this->_request.status_code = NotImplemented; break;
+						case 502: this->_request.status_code = BadGateway; break;
+						case 503: this->_request.status_code = ServiceUnavailable; break;
+						case 504: this->_request.status_code = GatewayTimeout; break;
+						case 505: this->_request.status_code = HTTPVersionNotSupported; break;
+						default: this->_request.status_code = InternalServerError; break;
+					}
+				}
+			}
+			continue;
+		}
+
+		if (lower_key == "content-type") {
+			this->_client_connection.response.appendHeaders("Content-Type", value);
+			this->_client_connection.response.content_type_is_set = true;
+			continue;
+		}
+
+		if (lower_key == "content-length") {
+			this->_client_connection.response.appendHeaders("Content-Length", value);
+			this->_client_connection.response.content_length_is_set = true;
+			continue;
+		}
+	}
+
+
+}
+
+// -----------------------------------------------------------
 
 

@@ -68,21 +68,27 @@ int main(int argc, char** argv) {
 
 				// cgi pipe reading/sending
 				else if (client_connection->request.isRequestState(CGI)) {
-					switch (client_connection->request.getRequestState()) {
-						case MONITORE_PIPE:
-							client_connection->process_request->monitoreCGIPipe(webserv.epfd);
-							break;
+					if (client_connection->request.getRequestState() == READ_CGI_PIPE) {
+						client_connection->process_request->readCGIPipe();
+					}
 
-						case READ_CGI_PIPE:
-                            client_connection->process_request->readCGIPipe();
-                            break;
+					if (client_connection->request.getRequestState() == PARSE_CGI_HEADERS) {
+						client_connection->process_request->parseCGIHeaders();
 
-						case PARSE_CGI_HEADERS:
-							client_connection->process_request->parseCGIHeaders();
-                            break;
+						// TODO: epol remove the pipe and close it
 
-						// evaluating CGI request states only
-						default: break;
+						// monitor the socker for output
+						try {
+							client_connection->monitorSockerForOutput(webserv.epfd);
+						} catch (SystemCallsFailedException& e) {
+							std::cerr << e.what() << '\n';
+							return 3;
+						}
+
+						// initialize the response object
+						client_connection->response.initializeResponseObject();
+						client_connection->request.setRequestState(COMPLETE);
+						
 					}
 				}
 
@@ -96,9 +102,13 @@ int main(int argc, char** argv) {
 					}
 
 					// else processes request
-                    client_connection->process_request->processRequest();
+					client_connection->process_request->processRequest();
 
-					if (client_connection->request.isRequestState(READY_TO_SERVE)) {
+					if (client_connection->request.getRequestState() == MONITORE_PIPE) {
+						client_connection->process_request->monitoreCGIPipe(webserv.epfd);
+					}
+
+					else if (client_connection->request.isRequestState(READY_TO_SERVE)) {
 
 						// monitor the socker for output
 						try {
