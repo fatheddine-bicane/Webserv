@@ -11,7 +11,9 @@ Response::Response(ClientConnection* client_connection)
 	: _client_connection(client_connection),
 	  _bytes_sent(0),
 	  serve_file(false),
-	  is_served(false) {
+	  is_served(false),
+	  content_type_is_set(false),
+	  content_length_is_set(false) {
 
 	appendHeaders("Connection", "close");
 	appendHeaders("Server", "Webserv/1.0");
@@ -55,11 +57,17 @@ void	Response::initializeResponseObject() {
 	// responde with a file
 	else if (this->serve_file) {
 		// append file related headers
-		appendHeaders("Content-Type", getContentType());
-		appendHeaders("Content-Length", getContentLength(), true);
+		if (!this->content_type_is_set) {
+			appendHeaders("Content-Type", getContentType());
+		}
+		if (!this->content_length_is_set) {
+			appendHeaders("Content-Length", getContentLength());
+		}
 
 		this->_staging_buffer = this->_headers;
 		this->_response_state = DISK_FILE;
+		// send the stored headers
+		this->_disk_file_state = STAGED_BUFFER_READY;
 	}
 
 	// else there is no file to serve just headers
@@ -72,16 +80,8 @@ void	Response::initializeResponseObject() {
 
 
 
-// WARNING: in the case where there is no file to serve, the PprocessRequest
-// caller of this function should pass true to last element when append the
-// last header, otherwise its the Response object responsibility to pass it.
-void	Response::appendHeaders(const String& key, const String& value,
-								bool last_header) {
+void	Response::appendHeaders(const String& key, const String& value) {
 	this->_headers += key + ": " + value + "\r\n";
-
-	if (last_header) {
-		this->_headers += "\r\n";
-	}
 }
 
 
@@ -199,7 +199,7 @@ void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 	ss.clear();
 
 	ss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n"
-	   << this->_headers;
+	   << this->_headers << "\r\n";
 	this->_headers = ss.str();
 }
 
@@ -255,11 +255,13 @@ bool	Response::attemptOpeningErrorPageFile(HTTPStatus HTTP_status) {
 
 	if (!openFileToSend(error_page->second)) return false;
 
-	String file_size = getContentLength();
-
 	// append file related headers
-	appendHeaders("Content-Type", getContentType(error_page->second));
-	appendHeaders("Content-Length", file_size, true);
+	if (!this->content_type_is_set) {
+		appendHeaders("Content-Type", getContentType(error_page->second));
+	}
+	if (!this->content_length_is_set) {
+		appendHeaders("Content-Length", getContentLength());
+	}
 
 	return true;
 }
@@ -287,7 +289,7 @@ String	Response::buildErrorPage(HTTPStatus HTTP_status) {
 	String content_length = oss.str();
 
 	appendHeaders("Content-Type", "text/html");
-	appendHeaders("Content-Length", content_length, true);
+	appendHeaders("Content-Length", content_length);
 
 	return error_page;
 }
