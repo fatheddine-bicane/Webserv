@@ -430,7 +430,7 @@ bool	ProcessRequest::isCGIRequest() {
 	if (cgi_pass != this->_request.location->cgi_pass.end()) {
 		while (pyPos != String::npos) {
 			if (pyPos + 3 == path.length() || path[pyPos + 3] == '/') {
-				this->_interpreter = "python3";
+				this->_interpreter = ".py";
 				this->_extention_pos = pyPos + 3;
 				return true;
 			}
@@ -444,7 +444,7 @@ bool	ProcessRequest::isCGIRequest() {
 		size_t jsPos = path.find(".js");
 		while (jsPos != String::npos) {
 			if (jsPos + 3 == path.length() || path[jsPos + 3] == '/') {
-				this->_interpreter = "node";
+				this->_interpreter = ".js";
 				this->_extention_pos = jsPos + 3;
 				return true;
 			}
