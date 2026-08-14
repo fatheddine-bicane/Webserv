@@ -28,8 +28,6 @@ void	ProcessRequest::processRequest() {
 		return;
 	}
 
-	// mock	
-	resolveFilePath();
 
 	else {
 		try {
@@ -103,7 +101,7 @@ void	ProcessRequest::processGetRequest() {
 		if (!this->_client_connection->openFileToSend(this->_file_path)) {
 			throw ProcessRequestException(InternalServerError);
 		}
-		this->client_connection->response.serve_file = true;
+		this->client_connection->response.serve_file  = true;
 		this->request.status_code = OK;
 		this->_request.setRequestState(COMPLETE);
 	}

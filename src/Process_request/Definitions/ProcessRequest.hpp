@@ -22,8 +22,6 @@ public:
 
 
 private:
-	void	resolveFilePath();
-
 	// get request helpers
 	void	processGetRequest();
 	void	renderDirectoryListing();
