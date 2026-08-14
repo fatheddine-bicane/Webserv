@@ -10,6 +10,7 @@
 #include <sys/signal.h>
 #include <unistd.h>
 #include <vector>
+#include <sys/stat.h>
 
 
 // INFO: constructor
@@ -242,6 +243,7 @@ bool	ProcessRequest::isCGISucceed(std::vector<pid_t>& cgis_to_reap) {
 
 
 
+// TODO: resolve the path correctly (look for index)
 void	ProcessRequest::resolveFilePath() {
 	// strip the query string if it exists
 	String clean_uri = this->_client_connection.request.target_resource;
@@ -276,6 +278,27 @@ void	ProcessRequest::resolveFilePath() {
 		this->_file_path = clean_uri;
 	}
 
+
+	// resolve the default index in case the resourse is a folder
+	struct stat path_stat;
+	if (stat(this->_file_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
+		if (this->_file_path.empty() || this->_file_path[this->_file_path.length() - 1] != '/') {
+			this->_file_path += "/";
+		}
+
+		// 2. Iterate through the index vector
+		std::vector<String>& indexs = this->_request.location->shared_directives.index;
+		for (size_t i = 0; i < indexs.size(); i++) {
+			String potential_index_path = this->_file_path + indexs[i];
+
+			// stop at thefirst valid index
+			struct stat index_stat;
+			if (stat(potential_index_path.c_str(), &index_stat) == 0 && S_ISREG(index_stat.st_mode)) {
+				this->_file_path = potential_index_path;
+				break;
+			}
+		}
+	}
 }
 
 
