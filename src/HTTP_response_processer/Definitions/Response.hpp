@@ -61,6 +61,7 @@ public:
 	bool	openFileToSend(const String& file_name);
 	void	appendHeaders(const String& key, const String& value);
 	void	appendDirectoryListeningBody(const String& body);
+	void	appendCTLF();
 
 
 	// INFO: helper functions

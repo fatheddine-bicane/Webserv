@@ -42,12 +42,12 @@ void	ProcessRequest::processRequest() {
 
 	try {
 
-		// if (isCGIRequest()) {
-		// 	this->_client_connection.response.is_cgi_response = true;
-		// 	// handle cgi
-		// 	processCGIRequest();
-		// 	return;
-		// }
+		if (isCGIRequest()) {
+			this->_client_connection.response.is_cgi_response = true;
+			// handle cgi
+			processCGIRequest();
+			return;
+		}
 
 
 		// NOTE: each handler should mark there request state
@@ -289,7 +289,7 @@ void	ProcessRequest::resolveFilePath() {
 			this->_file_path += "/";
 		}
 
-		// 2. Iterate through the index vector
+		// iterate through the index vector
 		std::vector<String>& indexs = this->_request.location->shared_directives.index;
 		for (size_t i = 0; i < indexs.size(); i++) {
 			String potential_index_path = this->_file_path + indexs[i];
@@ -519,9 +519,7 @@ bool	ProcessRequest::isCGIRequest() {
 		}
 	}
 
-	// BUG: will always throw the execption
-	// requested cgi is not defined in the cgi_pass directive in the location
-	throw ProcessRequestException(NotFound);
+	return false;
 }
 
 
@@ -620,13 +618,11 @@ void	ProcessRequest::parseCGIHeaders() {
 
 		if (lower_key == "content-type") {
 			this->_client_connection.response.appendHeaders("Content-Type", value);
-			this->_client_connection.response.content_type_is_set = true;
 			continue;
 		}
 
 		if (lower_key == "content-length") {
 			this->_client_connection.response.appendHeaders("Content-Length", value);
-			this->_client_connection.response.content_length_is_set = true;
 			continue;
 		}
 	}
@@ -703,6 +699,7 @@ void	ProcessRequest::renderDirectoryListing() {
 	size << html.size();
 	this->_client_connection.response.appendHeaders("Content-Length", size.str());
 	this->_client_connection.response.appendHeaders("Content-Type", "text/html");
+	this->_client_connection.response.appendCTLF();
 
 	this->_client_connection.response.appendDirectoryListeningBody(html);
 }
