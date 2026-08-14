@@ -59,7 +59,7 @@ bool	Request::isRequestState(RequestState request_state) {
 	else if (request_state == CGI) {
 		return (this->_state == MONITORE_PIPE
 				|| this->_state == READ_CGI_PIPE
-				|| this->_state == PARSE_CGI_HEADERS);
+				|| this->_state == CGI_PIPE_DRAINED);
 	}
 
 	return (this->_state == request_state);

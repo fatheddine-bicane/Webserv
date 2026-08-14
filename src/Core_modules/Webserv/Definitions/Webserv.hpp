@@ -33,6 +33,7 @@ public:
 	struct epoll_event	events[MAX_EVENTS];
 	// log server errors
 	std::ofstream error_log;
+	std::vector<pid_t>	cgis_to_reap;
 
 public:
 	// INFO: constructors/destructor
@@ -49,4 +50,5 @@ public:
 	Connection*	getConnectionObject(int index);
 	void	addNewClientConnection(Connection* connection);
 	void	removeClient(ClientConnection* client_connection);
+	void	reapCGIUnfinishedProcesses();
 };

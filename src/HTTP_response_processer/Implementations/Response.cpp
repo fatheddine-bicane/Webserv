@@ -13,7 +13,8 @@ Response::Response(ClientConnection* client_connection)
 	  serve_file(false),
 	  is_served(false),
 	  content_type_is_set(false),
-	  content_length_is_set(false) {
+	  content_length_is_set(false),
+	  is_cgi_response(false) {
 
 	appendHeaders("Connection", "close");
 	appendHeaders("Server", "Webserv/1.0");
@@ -21,6 +22,12 @@ Response::Response(ClientConnection* client_connection)
 
 Response::~Response() {
 	this->_file_to_send.close();
+
+	// if its a cgi remove the tmp body file
+	if (this->is_cgi_response && this->serve_file) {
+		std::cout << this->_file_to_send_name << std::endl;
+		unlink(this->_file_to_send_name.c_str());
+	}
 }
 
 // -----------------------------------------------------------

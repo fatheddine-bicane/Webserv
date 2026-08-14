@@ -29,7 +29,6 @@ private:
 	// cgi
 	String		_interpreter;
 	size_t		_extention_pos;
-	EP_INSTANCE	_epfd;
 	String			_cgi_body_file_name;
 	CGIState		_cgi_state;
 	String			_cgi_pipe_buffer;
@@ -51,8 +50,9 @@ public:
 
 	// cgi processors
 	void	monitoreCGIPipe(EP_INSTANCE epfd);
-	void	readCGIPipe();
+	void	readCGIPipe(EP_INSTANCE epfd);
 	void	parseCGIHeaders();
+	bool	isCGISucceed(std::vector<pid_t>& cgis_to_reap);
 
 private:
 	String	getFilePath();

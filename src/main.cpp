@@ -57,6 +57,9 @@ int main(int argc, char** argv) {
 						if (client_connection->response.is_served) {
 							// clear connection
                             webserv.removeClient(client_connection);
+							if (client_connection->response.is_cgi_response) {
+
+							}
 						}
 
 					} catch (ClientSocketErrorException& e) {
@@ -69,13 +72,17 @@ int main(int argc, char** argv) {
 				// cgi pipe reading/sending
 				else if (client_connection->request.isRequestState(CGI)) {
 					if (client_connection->request.getRequestState() == READ_CGI_PIPE) {
-						client_connection->process_request->readCGIPipe();
+						client_connection->process_request->readCGIPipe(webserv.epfd);
 					}
 
-					if (client_connection->request.getRequestState() == PARSE_CGI_HEADERS) {
-						client_connection->process_request->parseCGIHeaders();
-
-						// TODO: epol remove the pipe and close it
+					if (client_connection->request.getRequestState() == CGI_PIPE_DRAINED) {
+						if (client_connection->process_request->isCGISucceed(webserv.cgis_to_reap)) {
+							client_connection->process_request->parseCGIHeaders();
+							client_connection->request.setRequestState(COMPLETE);
+						} else {
+							client_connection->request.status_code = InternalServerError;
+							client_connection->request.setRequestState(MALFORMED);
+						}
 
 						// monitor the socker for output
 						try {
@@ -87,7 +94,6 @@ int main(int argc, char** argv) {
 
 						// initialize the response object
 						client_connection->response.initializeResponseObject();
-						client_connection->request.setRequestState(COMPLETE);
 						
 					}
 				}
@@ -125,6 +131,10 @@ int main(int argc, char** argv) {
 
 			} // if client connection
 		} // for each ready socket
+
+		// reap the cgi processes that are hanging
+		webserv.reapCGIUnfinishedProcesses();
+
 	} //while true
 
 	return 0;

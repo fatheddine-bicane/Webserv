@@ -40,6 +40,7 @@ void	ProcessRequest::processRequest() {
 	try {
 
 		if (isCGIRequest()) {
+			this->_client_connection.response.is_cgi_response = true;
 			// handle cgi
 			processCGIRequest();
 			return;
@@ -109,7 +110,7 @@ void	ProcessRequest::monitoreCGIPipe(EP_INSTANCE epfd) {
 
 
 
-void	ProcessRequest::readCGIPipe() {
+void	ProcessRequest::readCGIPipe(EP_INSTANCE epfd) {
 	File pipe_read_end = this->_client_connection.pipe_read_end;
 	char buffer[_4KB];
 	ssize_t bytes_read = read(pipe_read_end, buffer, sizeof(buffer) - 1);
@@ -131,7 +132,9 @@ void	ProcessRequest::readCGIPipe() {
 	// no more data to read
 	else if (bytes_read == 0) {
 		close(pipe_read_end);
-		this->_request.setRequestState(PARSE_CGI_HEADERS);
+		epoll_ctl(epfd, EPOLL_CTL_DEL, pipe_read_end, NULL);
+
+		this->_request.setRequestState(CGI_PIPE_DRAINED);
 		this->_client_connection.response.openFileToSend(this->_cgi_body_file_name);
 	}
 
@@ -200,6 +203,39 @@ void	ProcessRequest::readCGIBody(char* buffer, ssize_t bytes_read) {
 	tmp_file_stream.write(buffer, bytes_read);
 	tmp_file_stream.close();
 }
+
+
+
+bool	ProcessRequest::isCGISucceed(std::vector<pid_t>& cgis_to_reap) {
+	pid_t pid = this->_client_connection.pid;
+	int status;
+
+	// use WNOHANG so that the main process wont hang if the cgi is still runing
+	pid_t wait_res = waitpid(pid, &status, WNOHANG);
+
+	if (wait_res > 0) {
+		if (WIFEXITED(status)) {
+			int exit_code = WEXITSTATUS(status);
+			// cgi exited with an error
+			if (exit_code != 0) {
+				return false;
+			}
+
+			return true;
+		}
+		// cgi exited with a signal
+		else if (WIFSIGNALED(status)) {
+			return false;
+		}
+
+	} else if (wait_res == 0) {
+		cgis_to_reap.push_back(pid);
+		return true;
+	}
+
+	return false;
+}
+
 
 
 // -----------------------------------------------------------
