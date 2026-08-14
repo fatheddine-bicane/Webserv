@@ -17,7 +17,7 @@ private:
 	enum ResponseState {
 		DISK_FILE, BUILT_BODY,
 		NAKED_HEADERS, RESPONS_SERVED,
-		CONNECTION_CLOSED
+		CONNECTION_CLOSED, DIRECTORY_LISTING_HTML_BODY
 	};
 
 	enum DiskFileState {
@@ -60,6 +60,7 @@ public:
 	void	sendResponse();
 	bool	openFileToSend(const String& file_name);
 	void	appendHeaders(const String& key, const String& value);
+	void	appendDirectoryListeningBody(const String& body);
 
 
 	// INFO: helper functions

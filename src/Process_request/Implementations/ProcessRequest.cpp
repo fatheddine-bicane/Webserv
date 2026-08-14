@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <vector>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 
 // INFO: constructor
@@ -40,12 +42,12 @@ void	ProcessRequest::processRequest() {
 
 	try {
 
-		if (isCGIRequest()) {
-			this->_client_connection.response.is_cgi_response = true;
-			// handle cgi
-			processCGIRequest();
-			return;
-		}
+		// if (isCGIRequest()) {
+		// 	this->_client_connection.response.is_cgi_response = true;
+		// 	// handle cgi
+		// 	processCGIRequest();
+		// 	return;
+		// }
 
 
 		// NOTE: each handler should mark there request state
@@ -56,6 +58,7 @@ void	ProcessRequest::processRequest() {
 		// the 'ProcessRequestException' exception
 		switch (this->_request.method) {
 			case GET:
+				processGetRequest();
 				// handle get
 				break;
 
@@ -630,6 +633,80 @@ void	ProcessRequest::parseCGIHeaders() {
 
 
 }
+
+
+
+void	ProcessRequest::processGetRequest() {
+	// check if file exists and is readable
+	if (access(this->_file_path.c_str(), F_OK) == -1) {
+		throw ProcessRequestException(NotFound);
+	}
+	if (access(this->_file_path.c_str(), R_OK) == -1) {
+		throw ProcessRequestException(Forbidden);
+	}
+
+	struct stat info;
+	if (stat(this->_file_path.c_str(), &info) != 0) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	if (S_ISDIR(info.st_mode)) {
+		if (this->_request.location->shared_directives.autoindex) {
+			renderDirectoryListing();
+			this->_request.status_code = OK;
+			this->_request.setRequestState(COMPLETE);
+			return;
+		}
+
+		throw ProcessRequestException(Forbidden);
+	}
+
+	// file is a regular file, send it
+	else {
+		if (!this->_client_connection.response.openFileToSend(this->_file_path)) {
+			throw ProcessRequestException(InternalServerError);
+		}
+		this->_client_connection.response.serve_file  = true;
+		this->_client_connection.request.status_code = OK;
+		this->_request.setRequestState(COMPLETE);
+	}
+}
+
+void	ProcessRequest::renderDirectoryListing() {
+	DIR* directory = opendir(this->_file_path.c_str());
+	if (directory == NULL) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	String html;
+	html += "<!DOCTYPE html>\r\n";
+	html += "<html><head><title>Directory listing</title></head><body>\r\n";
+	html += "<h1>Index of " + this->_request.target_resource + "</h1>\r\n";
+	html += "<ul>\r\n";
+
+	struct dirent* entry;
+	while ((entry = readdir(directory)) != NULL) {
+		String name = entry->d_name;
+		if (name == "." || name == "..") {
+			continue;
+		}
+
+		html += "<li><a href=\"" + name + "\">" + name + "</a></li>\r\n";
+	}
+	closedir(directory);
+
+	html += "</ul>\r\n";
+	html += "</body></html>\r\n";
+
+	// set the response headers for the directory listing
+	std::stringstream size;
+	size << html.size();
+	this->_client_connection.response.appendHeaders("Content-Length", size.str());
+	this->_client_connection.response.appendHeaders("Content-Type", "text/html");
+
+	this->_client_connection.response.appendDirectoryListeningBody(html);
+}
+
 
 // -----------------------------------------------------------
 

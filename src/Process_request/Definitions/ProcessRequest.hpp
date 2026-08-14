@@ -70,10 +70,11 @@ private:
 	void	readCGIHeaders(char* buffer, ssize_t bytes_read);
 	void	readCGIBody(char* buffer, ssize_t bytes_read);
 
-
-
-
 	void	processGetRequest();
+	void	renderDirectoryListing();
+
+
+
 	void	processPostRequest();
 	void	processDeleteRequest();
 	void	processPutRequest();

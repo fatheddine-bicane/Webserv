@@ -129,6 +129,11 @@ void	Response::sendResponse() {
 }
 
 
+void	Response::appendDirectoryListeningBody(const String& body) {
+	this->_response_state = DIRECTORY_LISTING_HTML_BODY;
+	this->_staging_buffer = body;
+}
+
 // -----------------------------------------------------------
 
 
