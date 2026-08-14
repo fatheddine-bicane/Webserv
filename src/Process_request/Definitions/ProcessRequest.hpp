@@ -1,18 +1,36 @@
 #pragma once
 
 #include "../../HTTP_request_parser/Definitions/Request.hpp"
+#include "../../Core_modules/Connection/Definitions/ClientConnection.hpp"
+#include <cstddef>
+#include <fstream>
+#include <iterator>
+#include <vector>
+#include <sys/epoll.h>
+#include <sys/wait.h>
+
+
+
 
 
 class ProcessRequest {
+
+private:
+	enum CGIState {
+		READING_HEADERS, READING_BODY
+	};
+
+
 private:
 	Request&	_request;
 	Server&		_server;
-	Location*	_location;
+	ClientConnection&	_client_connection;
 
-	String		_file_path;
+
 public:
 	// INFO: constructor
-	ProcessRequest(Request& request, Server& server);
+	ProcessRequest(Request& request, Server& server,
+				   ClientConnection& client_connection);
 
 
 public:
@@ -20,9 +38,13 @@ public:
 	void	processRequest();
 	// send response
 
+	// cgi processors
+	void	monitoreCGIPipe(EP_INSTANCE epfd);
+	void	readCGIPipe(EP_INSTANCE epfd);
+	void	parseCGIHeaders();
+	bool	isCGISucceed(std::vector<pid_t>& cgis_to_reap);
 
 private:
-	// get request helpers
 	void	processGetRequest();
 	void	renderDirectoryListing();
 

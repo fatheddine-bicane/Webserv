@@ -1,8 +1,9 @@
 #include <sys/epoll.h>
 
 #include "../Definitions/ClientConnection.hpp"
-#include "../../../Response_builder/Definitions/Response.hpp"
+#include "../../../HTTP_response_processer/Definitions/Response.hpp"
 #include "../../Typedef.hpp"
+#include "../../../Process_request/Definitions/ProcessRequest.hpp"
 
 ClientConnection::ClientConnection(SOCKET fd,
 								   String& ip_port,
@@ -13,6 +14,13 @@ ClientConnection::ClientConnection(SOCKET fd,
 	  servers(servers),
 	  response(this) {
 	this->server = NULL;
+	this->process_request = new ProcessRequest(this->request, *this->server, *this);
+}
+
+
+
+ClientConnection::~ClientConnection() {
+	delete this->process_request;
 }
 
 

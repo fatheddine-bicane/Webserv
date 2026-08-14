@@ -1,4 +1,5 @@
 #include "../Definitions/Parser.hpp"
+#include <map>
 
 
 // INFO: constructors
@@ -628,19 +629,14 @@ void	Parser::parseCgiPass(Location& location_context) {
 	if (token.lexeme == ".py" || token.lexeme == ".js") {
 		String extention = token.lexeme;
 
-
-		std::vector<std::pair<String, String> >::iterator it;
-		std::vector<std::pair<String, String> >::iterator end;
-		it = location_context.cgi_pass.begin();
-		end = location_context.cgi_pass.end();
-		for (; it != end; it++) {
-			if (it->first == extention) {
-				throw DuplicatedValueException(token, this->_source);
-			}
+		std::map<String, String>::iterator it;
+		it = location_context.cgi_pass.find(extention);
+		if (it != location_context.cgi_pass.end() && it->first == extention) {
+			throw DuplicatedValueException(token, this->_source);
 		}
 
 		token = consume();
-		location_context.cgi_pass.push_back(std::make_pair(extention, token.lexeme));
+		location_context.cgi_pass.insert(std::make_pair(extention, token.lexeme));
 	} else {
 		throw UnsupportedCgiScriptType(token, this->_source);
 	}

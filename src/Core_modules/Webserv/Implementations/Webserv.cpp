@@ -84,4 +84,27 @@ void	Webserv::removeClient(ClientConnection* client_connection) {
 }
 
 
+
+
+void	Webserv::reapCGIUnfinishedProcesses() {
+	std::vector<pid_t>::iterator it = this->cgis_to_reap.begin();
+
+	while (it != cgis_to_reap.end()) {
+		int status;
+
+		pid_t wait_res = waitpid(*it, &status, WNOHANG);
+
+		if (wait_res > 0) {
+			it = cgis_to_reap.erase(it);
+		}
+		else if (wait_res == -1) {
+			it = cgis_to_reap.erase(it);
+		}
+		else if (wait_res == 0) {
+			++it;
+		}
+	}
+}
+
+
 // -------------------------------------------------
