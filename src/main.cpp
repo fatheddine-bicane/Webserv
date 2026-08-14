@@ -57,9 +57,9 @@ int main(int argc, char** argv) {
 						if (client_connection->response.is_served) {
 							// clear connection
                             webserv.removeClient(client_connection);
-							if (client_connection->response.is_cgi_response) {
-
-							}
+							// if (client_connection->response.is_cgi_response) {
+							//
+							// }
 						}
 
 					} catch (ClientSocketErrorException& e) {

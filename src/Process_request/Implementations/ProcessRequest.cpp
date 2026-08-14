@@ -475,6 +475,7 @@ void	ProcessRequest::setUpParentProcess(PIPE& fds) {
 
 
 bool	ProcessRequest::isCGIRequest() {
+	//BUG: check using the resolved path
 	String& url = this->_request.target_resource;
 
 	// isolate the URI path by removing the query string
@@ -515,6 +516,7 @@ bool	ProcessRequest::isCGIRequest() {
 		}
 	}
 
+	// BUG: will always throw the execption
 	// requested cgi is not defined in the cgi_pass directive in the location
 	throw ProcessRequestException(NotFound);
 }
