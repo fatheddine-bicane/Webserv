@@ -11,7 +11,7 @@
 #include "../../../Config_parser/Parser/Definitions/Parser.hpp"
 #include "../../../Config_parser/Scanner/Definitions/Token.hpp"
 #include "../../../Server_multiplexing/Definitions/ServerMultiplexing.hpp"
-#include "../../../Response_builder/Exceptions/ResponseExceptions.hpp"
+#include "../../../HTTP_response_processer/Exceptions/ResponseExceptions.hpp"
 
 #include "../../Connection/Definitions/Connection.hpp"
 #include "../../Connection/Definitions/ServerConnection.hpp"
@@ -33,6 +33,7 @@ public:
 	struct epoll_event	events[MAX_EVENTS];
 	// log server errors
 	std::ofstream error_log;
+	std::vector<pid_t>	cgis_to_reap;
 
 public:
 	// INFO: constructors/destructor
@@ -49,4 +50,5 @@ public:
 	Connection*	getConnectionObject(int index);
 	void	addNewClientConnection(Connection* connection);
 	void	removeClient(ClientConnection* client_connection);
+	void	reapCGIUnfinishedProcesses();
 };

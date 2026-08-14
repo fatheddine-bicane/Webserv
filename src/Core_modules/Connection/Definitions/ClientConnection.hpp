@@ -2,9 +2,11 @@
 
 #include "Connection.hpp"
 #include "../../../HTTP_request_parser/Definitions/Request.hpp"
-#include "../../../Response_builder/Definitions/Response.hpp"
+#include "../../../HTTP_response_processer/Definitions/Response.hpp"
 #include "../../../Server_multiplexing/Exceptions/SystemCallsExceptions.hpp"
 
+
+class ProcessRequest;
 
 enum ConnectionState {
 	KEEP_ALIVE, CLOSE
@@ -15,12 +17,18 @@ public:
 	Request			request;
 	ConnectionState	state;
 	Server*			server;
-	String&	ip_port;
-	Servers&	servers;
-	Response	response;
+	String&			ip_port;
+	Servers&		servers;
+	Response		response;
+	ProcessRequest*	process_request;
+
+	// if the request is cgi
+	pid_t			pid;
+	File			pipe_read_end;
 
 public:
 	ClientConnection(SOCKET fd, String& ip_port, Servers& servers);
+	~ClientConnection();
 
 	void	monitorSockerForOutput(EP_INSTANCE ep_instance);
 };

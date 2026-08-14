@@ -16,6 +16,13 @@ typedef std::map<SOCKET, String> SocketsMap;
 // sockets addresses
 typedef std::vector<std::pair<String, String> > Addresses;
 typedef std::map<String, String> Headers; // http headers
+//pipe
+typedef int PIPE[2];
+#define IsValidPipe(p) ((p) >= 0)
+
+#define isChildProcess(pid) ((pid) == 0)
+#define isParentProcess(pid) ((pid) > 0)
+typedef int File;
 
 #define IsValidSocket(s) ((s) >= 0)
 #define CloseSocket(s) (close(s))

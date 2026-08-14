@@ -42,6 +42,12 @@ public:
 	bool				serve_file;
 	bool				is_served;
 
+	// headers
+	bool				content_type_is_set;
+	bool				content_length_is_set;
+
+	// cgi
+	bool				is_cgi_response;
 
 public:
 	// INFO: constructor
@@ -53,8 +59,7 @@ public:
 	void	initializeResponseObject();
 	void	sendResponse();
 	bool	openFileToSend(const String& file_name);
-	void	appendHeaders(const String& key, const String& value,
-						  bool last_header=false);
+	void	appendHeaders(const String& key, const String& value);
 
 
 	// INFO: helper functions

@@ -50,7 +50,7 @@ public:
 	String									alias;
 	std::set<String>						limit_except;
 	std::pair<int, String>					return_d;
-	std::vector<std::pair<String, String> >	cgi_pass;
+	std::map<String, String>				cgi_pass;
 
 public:
 	Location() {}

@@ -40,7 +40,10 @@ enum RequestState {
 	// request parsed and its correct
 	COMPLETE,
 	// request parsed and its not correct
-	MALFORMED
+	MALFORMED,
+	// cgi request
+	CGI,
+	MONITORE_PIPE, READ_CGI_PIPE, CGI_PIPE_DRAINED
 };
 
 
@@ -106,6 +109,7 @@ public:
 	void	attemptRequestParse();
 	bool	isRequestState(RequestState request_state);
 	void	setRequestState(RequestState new_request_state);
+	RequestState	getRequestState();
 
 
 private:
