@@ -26,6 +26,16 @@ private:
 	Server&		_server;
 	ClientConnection&	_client_connection;
 
+	// cgi
+	String		_interpreter;
+	size_t		_extention_pos;
+	String			_cgi_body_file_name;
+	CGIState		_cgi_state;
+	String			_cgi_pipe_buffer;
+	String			_cgi_headers;
+
+
+	String		_file_path;
 
 public:
 	// INFO: constructor
@@ -45,9 +55,25 @@ public:
 	bool	isCGISucceed(std::vector<pid_t>& cgis_to_reap);
 
 private:
-	void	processGetRequest();
-	void	renderDirectoryListing();
+	String	getFilePath();
+	void	resolveFilePath();
 
+
+
+	// cgi
+	void	processCGIRequest();
+	void	setPathEnvVariables(std::vector<String>& env);
+	void	setHeadersEnvVariables(std::vector<String>& env);
+	void	setUpChildProcess(PIPE& fds, std::vector<String>& env);
+	void	setUpParentProcess(PIPE& fds);
+	bool	isCGIRequest();
+	void	readCGIHeaders(char* buffer, ssize_t bytes_read);
+	void	readCGIBody(char* buffer, ssize_t bytes_read);
+
+
+
+
+	void	processGetRequest();
 	void	processPostRequest();
 	void	processDeleteRequest();
 	void	processPutRequest();
