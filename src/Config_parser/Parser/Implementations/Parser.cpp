@@ -465,11 +465,10 @@ void	Parser::parseIndex(SharedDirectives& directive_context) {
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
-
-	while (match(peek(), VALUE)) {
+ 
+    do {
 		directive_context.index.push_back(token.lexeme);
-		token = consume();
-	}
+    } while (match(peek(), VALUE) && (token = consume(), true));
 
 	expect(SEMICOLON);
 }
