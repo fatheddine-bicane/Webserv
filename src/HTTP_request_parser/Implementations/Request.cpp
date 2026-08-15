@@ -234,6 +234,10 @@ bool	Request::parseTargetResource(String& start_line) {
 	if (target_resource.length() >= 100) {
 		return malformedRequest(URITooLong);
 	}
+	
+	if (target_resource.find("../") != String::npos) {
+		return malformedRequest(Forbidden);
+	}
 
 	this->target_resource = target_resource;
 

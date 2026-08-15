@@ -25,7 +25,6 @@ Response::~Response() {
 
 	// if its a cgi remove the tmp body file
 	if (this->is_cgi_response && this->serve_file) {
-		std::cout << this->_file_to_send_name << std::endl;
 		unlink(this->_file_to_send_name.c_str());
 	}
 }
