@@ -73,10 +73,6 @@ void	ProcessRequest::processRequest() {
 			case DELETE:
 				// handle delete
 				break;
-
-			case PUT:
-				// handle put
-				break;
 		}
 	}
 

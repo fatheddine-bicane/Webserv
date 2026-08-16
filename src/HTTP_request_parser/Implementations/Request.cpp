@@ -208,8 +208,6 @@ bool	Request::parseMethod(String& start_line) {
 		this->method = POST;
 	} else if (method == "DELETE") {
 		this->method = DELETE;
-	} else if (method == "PUT") {
-		this->method = PUT;
 	}
 
 	// if server dosent recognize the method
@@ -813,8 +811,6 @@ bool	Request::isReqeustMethodAllowed() {
 		case GET: method = "GET"; break;
 		case POST: method = "POST"; break;
 		case DELETE: method = "DELETE"; break;
-	
-		case PUT: break;
 	}
 
 	std::set<String>& limit_except = this->location->limit_except;

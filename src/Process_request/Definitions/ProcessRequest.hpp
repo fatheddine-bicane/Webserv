@@ -90,7 +90,6 @@ private:
 
 	void	processPostRequest();
 	void	processDeleteRequest();
-	void	processPutRequest();
 	void	processMalformedRequest();
 
 };

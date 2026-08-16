@@ -155,8 +155,7 @@ bool	Parser::isDirective(TokenType token_type) {
 bool	Parser::isHttpMethod(const String& method) {
 	return (method == "GET"
 		 || method == "POST"
-		 || method == "DELETE"
-		 || method == "PUT");
+		 || method == "DELETE");
 }
 
 
@@ -484,12 +483,12 @@ void	Parser::parseDavMethods(SharedDirectives& directive_context) {
 
 	while (match(token, VALUE)) {
 		// ignore case sensitivity
-		if (token.lexeme == "delete" || token.lexeme == "put") {
+		if (token.lexeme == "delete") {
 			String& lexeme = token.lexeme;
 			std::transform(lexeme.begin(), lexeme.end(), lexeme.begin(), ::toupper);
 		}
 
-		if (token.lexeme == "DELETE" || token.lexeme == "PUT") {
+		if (token.lexeme == "DELETE") {
 			// match nginx rejecting duplicates
 			std::set<String>& dav_methods = directive_context.dav_methods;
 			if (dav_methods.find(token.lexeme) != dav_methods.end()) {
