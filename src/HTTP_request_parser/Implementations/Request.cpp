@@ -113,6 +113,8 @@ void	Request::parseFieldLine() {
 		// map location block
 		if (!findLocationBlock()) return;
 
+		if (!isReqeustMethodAllowed()) return;
+
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
 		else if (!transferEncodingPresent() && !contentLengthPresent()) {
@@ -797,6 +799,27 @@ bool	Request::findLocationBlock() {
 		else {
 			return malformedRequest(NotFound);
 		}
+	}
+
+	return true;
+}
+
+
+
+bool	Request::isReqeustMethodAllowed() {
+	String method;
+
+	switch (this->method) {
+		case GET: method = "GET"; break;
+		case POST: method = "POST"; break;
+		case DELETE: method = "DELETE"; break;
+	
+		case PUT: break;
+	}
+
+	std::set<String>& limit_except = this->location->limit_except;
+	if (limit_except.find(method) == limit_except.end()) {
+		return malformedRequest(MethodNotAllowed);
 	}
 
 	return true;

@@ -157,6 +157,7 @@ private:
 	bool	contentLengthPresent();
 	String	generateRandomFileName();
 	bool	findLocationBlock();
+	bool	isReqeustMethodAllowed();
 
 
 
