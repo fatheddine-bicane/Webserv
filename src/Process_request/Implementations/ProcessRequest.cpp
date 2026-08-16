@@ -444,6 +444,14 @@ void    ProcessRequest::checkPotentialIndex() {
 // -----------------------------------------------------------
 
 void	ProcessRequest::processCGIRequest() {
+	// check if file exists and is readable
+	if (access(this->_file_path.c_str(), F_OK) == -1) {
+		throw ProcessRequestException(NotFound);
+	}
+	if (access(this->_file_path.c_str(), R_OK) == -1) {
+		throw ProcessRequestException(Forbidden);
+	}
+
 	std::vector<String> env;
 
 	setPathEnvVariables(env);

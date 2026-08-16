@@ -237,7 +237,7 @@ bool	Request::parseTargetResource(String& start_line) {
 	}
 	
 	if (target_resource.find("../") != String::npos
-		|| target_resource.find("/..")) {
+		|| target_resource.find("/..") != String::npos) {
 		return malformedRequest(Forbidden);
 	}
 
