@@ -681,10 +681,16 @@ void	ProcessRequest::renderDirectoryListing() {
 		throw ProcessRequestException(InternalServerError);
 	}
 
+	// force absolute path in the href tag for each inner file
+	String base_path = this->_script_name;
+	if (base_path.empty() || base_path[base_path.length() - 1] != '/') {
+		base_path += '/';
+	}
+
 	String html;
 	html += "<!DOCTYPE html>\r\n";
 	html += "<html><head><title>Directory listing</title></head><body>\r\n";
-	html += "<h1>Index of " + this->_request.target_resource + "</h1>\r\n";
+	html += "<h1>Index of " + base_path + "</h1>\r\n";
 	html += "<ul>\r\n";
 
 	struct dirent* entry;
@@ -694,7 +700,7 @@ void	ProcessRequest::renderDirectoryListing() {
 			continue;
 		}
 
-		html += "<li><a href=\"" + name + "\">" + name + "</a></li>\r\n";
+		html += "<li><a href=\"" + base_path + name + "\">" + name + "</a></li>\r\n";
 	}
 	closedir(directory);
 
