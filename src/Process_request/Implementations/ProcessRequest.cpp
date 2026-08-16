@@ -294,9 +294,7 @@ void	ProcessRequest::resolveFilePath() {
 
 void    ProcessRequest::checkPotentialIndex() {
 	struct stat info;
-	if (stat(this->_file_path.c_str(), &info) != 0) {
-		throw ProcessRequestException(InternalServerError);
-	}
+	if (stat(this->_file_path.c_str(), &info) != 0) return;
 
 	if (!S_ISDIR(info.st_mode)) return;
 
