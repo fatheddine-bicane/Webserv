@@ -5,7 +5,7 @@
 // ---------------------------------------------------
 SharedDirectives::SharedDirectives() {
 	// root directive
-	this->root = "html";
+	this->root = "./html/";
 
 	// error_page empty set means default value
 

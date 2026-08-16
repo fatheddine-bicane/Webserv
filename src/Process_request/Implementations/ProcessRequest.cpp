@@ -288,8 +288,7 @@ void	ProcessRequest::resolveFilePath() {
 		this->_file_path = this->_request.location->alias + uri_remainder;
 	}
 
-	// WARNING: this needs to be adjusted to force atleast one directive 
-	// Default fallback
+	// Default fallback (./html/)
 	else {
 		this->_file_path = clean_uri;
 	}
