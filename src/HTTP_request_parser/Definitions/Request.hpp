@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "../../Core_modules/Typedef.hpp"
-#include "../../Config_parser/Parser/Definitions/Directives.hpp"
+#include "../../config_parser/Parser/Definitions/Directives.hpp"
 #include "../../Core_modules/HTTPStatus.hpp"
 
 #define _8KB 8192
