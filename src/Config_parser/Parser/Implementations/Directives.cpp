@@ -10,7 +10,7 @@ SharedDirectives::SharedDirectives() {
 	// error_page empty set means default value
 
 	// client_max_body_size directive
-	this->client_max_body_size = 1000000;
+	this->client_max_body_size = 100 * 1024 * 1024;
 
 	// client_body_temp_path directive
 	// TODO: assign the default path
