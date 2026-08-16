@@ -33,6 +33,8 @@ int main(int argc, char** argv) {
 	}
 
 	while (true) {
+		if (webserv.isServerInterupted()) return EXIT_FAILURE;
+
 		webserv.getReadySockets();
 
 		for (int index = 0; index < webserv.events_size; index++) {

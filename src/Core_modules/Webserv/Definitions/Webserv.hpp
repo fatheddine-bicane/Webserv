@@ -54,4 +54,6 @@ public:
 	void	removeClient(ClientConnection* client_connection);
 	void	reapCGIUnfinishedProcesses();
 	static void	catch_sigint(sig_atomic_t signum);
+	static void cleanup(Connection* connection);
+	bool	isServerInterupted();
 };
