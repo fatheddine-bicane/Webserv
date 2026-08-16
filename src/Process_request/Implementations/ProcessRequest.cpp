@@ -45,9 +45,9 @@ void	ProcessRequest::processRequest() {
 
 	resolveFilePath();
 
-	try {
-		checkPotentialIndex();
+	checkPotentialIndex();
 
+	try {
 		if (this->_is_cgi_request) {
 			processCGIRequest();
 			return;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Core_modules/Typedef.hpp"
-#include "../../config_parser/Parser/Definitions/Directives.hpp"
+#include "../../Config_parser/Parser/Definitions/Directives.hpp"
 #include "../../Core_modules/HTTPStatus.hpp"
 #include "../Exceptions/ResponseExceptions.hpp"
 #include <cstddef>
