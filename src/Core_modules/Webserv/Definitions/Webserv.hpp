@@ -35,6 +35,7 @@ public:
 	std::ofstream error_log;
 	std::vector<pid_t>	cgis_to_reap;
 	std::vector<Connection*>	server_sockets;
+	static sig_atomic_t	signal_status;
 
 public:
 	// INFO: constructors/destructor
@@ -52,4 +53,5 @@ public:
 	void	addNewClientConnection(Connection* connection);
 	void	removeClient(ClientConnection* client_connection);
 	void	reapCGIUnfinishedProcesses();
+	static void	catch_sigint(sig_atomic_t signum);
 };
