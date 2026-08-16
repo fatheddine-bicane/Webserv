@@ -1,4 +1,5 @@
 #include "../Definitions/ServerMultiplexing.hpp"
+#include <netdb.h>
 
 
 ServerMultiplexing::ServerMultiplexing(Addresses& addresses, EP_INSTANCE epfd)
@@ -49,12 +50,17 @@ SOCKET ServerMultiplexing::createListeningSocket(Addresses::iterator& ip_port, s
 	struct	addrinfo* bind_addr = NULL;
 
 	int status = getaddrinfo(ip_port->first.c_str(), ip_port->second.c_str(), hints, &bind_addr);
-	if (status != 0)
+	if (status != 0) {
 		throw SystemCallsFailedException("getaddrinfo()");
+		freeaddrinfo(bind_addr);
+	}
+
 
 	SOCKET sock_listen = socket(bind_addr->ai_family, bind_addr->ai_socktype, bind_addr->ai_protocol);
-	if (!IsValidSocket(sock_listen))
+	if (!IsValidSocket(sock_listen)) {
+		freeaddrinfo(bind_addr);
 		throw SystemCallsFailedException("socket()");
+	}
 
 
 	// WARNING: debugging
@@ -70,11 +76,13 @@ SOCKET ServerMultiplexing::createListeningSocket(Addresses::iterator& ip_port, s
 
 	if (bind(sock_listen, bind_addr->ai_addr, bind_addr->ai_addrlen) < 0) {
 		CloseSocket(sock_listen);
+		freeaddrinfo(bind_addr);
 		throw BindSysCallFailedException(ip_port);
 	}
 
 	if(listen(sock_listen, 128) < 0){
 		CloseSocket(sock_listen);
+		freeaddrinfo(bind_addr);
 		throw SystemCallsFailedException("listen()");
 	}
 
