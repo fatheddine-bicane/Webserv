@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
 		// Initialize EpollMultiplexer
 		ServerMultiplexing multiplexer = ServerMultiplexing(parser.getAddresses(), webserv.epfd);
-		multiplexer.bootstrapServerListeners();
+		webserv.server_sockets = multiplexer.bootstrapServerListeners();
 		webserv.setSocketsMap(multiplexer.getSocketsMap());
 	} catch (ParserException& e) {
 		std::cout << e.what() << std::endl;

@@ -5,7 +5,7 @@ ServerMultiplexing::ServerMultiplexing(Addresses& addresses, EP_INSTANCE epfd)
 : _epfd(epfd), _addresses(addresses) {}
 
 
-void ServerMultiplexing::bootstrapServerListeners(){
+std::vector<Connection*> ServerMultiplexing::bootstrapServerListeners(){
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
@@ -24,6 +24,8 @@ void ServerMultiplexing::bootstrapServerListeners(){
 			throw;
 		}
 	}
+
+	return open_sockets;
 }
 
 void ServerMultiplexing::monitorListeningSocket(SOCKET socket_listen, Addresses::iterator& ip_port,

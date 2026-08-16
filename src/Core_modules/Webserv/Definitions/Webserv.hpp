@@ -34,6 +34,7 @@ public:
 	// log server errors
 	std::ofstream error_log;
 	std::vector<pid_t>	cgis_to_reap;
+	std::vector<Connection*>	server_sockets;
 
 public:
 	// INFO: constructors/destructor

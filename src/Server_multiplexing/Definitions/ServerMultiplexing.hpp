@@ -35,6 +35,6 @@ private:
 public:
 	ServerMultiplexing(Addresses& addresses, EP_INSTANCE epfd);
 
-	void	bootstrapServerListeners();
+	std::vector<Connection*>	bootstrapServerListeners();
 	SocketsMap&	getSocketsMap();
 };
