@@ -22,7 +22,8 @@ ProcessRequest::ProcessRequest(Request& request, Server& server,
 							   ClientConnection& client_connection)
 	: _request(request),
 	  _server(server),
-	  _client_connection(client_connection) {
+	  _client_connection(client_connection),
+	  _is_cgi_request(false) {
 }
 
 // -----------------------------------------------------------
@@ -38,13 +39,16 @@ void	ProcessRequest::processRequest() {
 		return;
 	}
 
+	splitURLFromQeury();
+
+	checkPotentialCGIRequest();
+
 	resolveFilePath();
 
 	try {
+		checkPotentialIndex();
 
-		if (isCGIRequest()) {
-			this->_client_connection.response.is_cgi_response = true;
-			// handle cgi
+		if (this->_is_cgi_request) {
 			processCGIRequest();
 			return;
 		}
@@ -106,6 +110,7 @@ void	ProcessRequest::monitoreCGIPipe(EP_INSTANCE epfd) {
 
 		this->_request.status_code = InternalServerError;
 		this->_request.setRequestState(MALFORMED);
+		return;
 	}
 
 	this->_request.setRequestState(READ_CGI_PIPE);
@@ -246,15 +251,24 @@ bool	ProcessRequest::isCGISucceed(std::vector<pid_t>& cgis_to_reap) {
 
 
 
-// TODO: resolve the path correctly (look for index)
-void	ProcessRequest::resolveFilePath() {
+
+void	ProcessRequest::splitURLFromQeury() {
 	// strip the query string if it exists
 	String clean_uri = this->_client_connection.request.target_resource;
 
 	size_t query_pos = clean_uri.find('?');
 	if (query_pos != String::npos) {
+		this->_query_string = clean_uri.substr(query_pos + 1);
 		clean_uri = clean_uri.substr(0, query_pos);
 	}
+
+	this->_script_name = clean_uri;
+}
+
+
+
+void	ProcessRequest::resolveFilePath() {
+	String& clean_uri = this->_script_name;
 
 	// ROOT directive gets priority
 	if (!this->_request.location->shared_directives.root.empty()) {
@@ -274,33 +288,63 @@ void	ProcessRequest::resolveFilePath() {
 		this->_file_path = this->_request.location->alias + uri_remainder;
 	}
 
-
 	// WARNING: this needs to be adjusted to force atleast one directive 
 	// Default fallback
 	else {
 		this->_file_path = clean_uri;
 	}
+}
 
 
-	// resolve the default index in case the resourse is a folder
-	struct stat path_stat;
-	if (stat(this->_file_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode)) {
-		if (this->_file_path.empty() || this->_file_path[this->_file_path.length() - 1] != '/') {
-			this->_file_path += "/";
+
+void    ProcessRequest::checkPotentialIndex() {
+	struct stat info;
+	if (stat(this->_file_path.c_str(), &info) != 0) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	if (!S_ISDIR(info.st_mode)) return;
+
+	if (this->_file_path.empty()
+		|| this->_file_path[this->_file_path.length() - 1] != '/') {
+		this->_file_path += '/';
+
+		if (this->_script_name[this->_script_name.length() - 1] != '/') {
+			this->_script_name += '/';
 		}
+	}
 
-		// iterate through the index vector
-		std::vector<String>& indexs = this->_request.location->shared_directives.index;
-		for (size_t i = 0; i < indexs.size(); i++) {
-			String potential_index_path = this->_file_path + indexs[i];
+	// iterate through the index arr until an index matches or none
+	std::vector<String>& indexs = this->_request.location->shared_directives.index;
+	for (size_t i = 0; i < indexs.size(); i++) {
+		String potential_index_path = this->_file_path + indexs[i];
 
-			// stop at thefirst valid index
-			struct stat index_stat;
-			if (stat(potential_index_path.c_str(), &index_stat) == 0 && S_ISREG(index_stat.st_mode)) {
-				this->_file_path = potential_index_path;
-				break;
+		struct stat index_info;
+		if (stat(potential_index_path.c_str(), &index_info) != 0) continue;
+
+		if (!S_ISREG(index_info.st_mode)) continue;
+
+		this->_file_path = potential_index_path;
+		this->_script_name = indexs[i];
+
+		// update state if the new script is a cgi file
+		size_t len = this->_file_path.length();
+		if (len >= 3 && this->_file_path.substr(len - 3) == ".py") {
+			if (this->_request.location->cgi_pass.find(".py")
+				!= this->_request.location->cgi_pass.end()) {
+
+				this->_is_cgi_request = true;
+				this->_interpreter = ".py";
+			}
+		} else if (len >= 3 && this->_file_path.substr(len - 3) == ".js") {
+			if (this->_request.location->cgi_pass.find(".js")
+				!= this->_request.location->cgi_pass.end()) {
+
+				this->_is_cgi_request = true;
+				this->_interpreter = ".js";
 			}
 		}
+		break;
 	}
 }
 
@@ -340,42 +384,11 @@ void	ProcessRequest::processCGIRequest() {
 
 
 void	ProcessRequest::setPathEnvVariables(std::vector<String>& env) {
-	String& url = this->_request.target_resource;
+	env.push_back("SCRIPT_NAME=" + this->_script_name);
+	env.push_back("QUERY_STRING=" + this->_query_string);
 
-	// set the script name variable
-	String script_name = url.substr(0, this->_extention_pos);
-	env.push_back("SCRIPT_NAME=" + script_name);
-
-	// url contains the script name alone
-	if (this->_extention_pos == url.length()) {
-		return;
-	}
-
-	size_t query_pos = url.find_first_of('?');
-
-	// there is a query string
-	if (query_pos != String::npos) {
-
-		// there is path info
-		if (this->_extention_pos != query_pos) {
-			// set the path info variable
-			String path_info = url.substr(this->_extention_pos, query_pos - this->_extention_pos);
-			env.push_back("PATH_INFO=" + path_info);
-		}
-
-		// set the query string variable
-		String query_string = url.substr(query_pos + 1);
-		env.push_back("QUERY_STRING=" + query_string);
-	}
-
-	// there is only a path info
-	else {
-		// empthy QUERY_STRING according to cgi rfc
-		env.push_back("QUERY_STRING=");
-
-		// set the path info variable
-		String path_info = url.substr(this->_extention_pos);
-		env.push_back("PATH_INFO=" + path_info);
+	if (!this->_path_info.empty()) {
+		env.push_back("PATH_INFO=" + this->_path_info);
 	}
 
 	// request method
@@ -477,50 +490,44 @@ void	ProcessRequest::setUpParentProcess(PIPE& fds) {
 
 
 
-bool	ProcessRequest::isCGIRequest() {
-	//BUG: check using the resolved path
-	String& url = this->_request.target_resource;
+void	ProcessRequest::checkPotentialCGIRequest() {
+	if (findScriptInterpreter(".py")) return;
+	else if (findScriptInterpreter(".js")) return;
+}
 
-	// isolate the URI path by removing the query string
-	size_t queryPos = url.find('?');
-	String path = (queryPos != String::npos) ? url.substr(0, queryPos) : url;
-
-	// convert the path to lowercase for case-insensitive matching
-    for (size_t i = 0; i < path.length(); ++i) {
-        path[i] = std::tolower(static_cast<unsigned char>(path[i]));
-    }
-
+bool	ProcessRequest::findScriptInterpreter(const String& extention) {
 	std::map<String, String>::iterator cgi_pass;
-    // search for Python extension followed by end-of-string or '/' (PATH_INFO)
-    size_t pyPos = path.find(".py");
-	cgi_pass = this->_request.location->cgi_pass.find(".py");
-	if (cgi_pass != this->_request.location->cgi_pass.end()) {
-		while (pyPos != String::npos) {
-			if (pyPos + 3 == path.length() || path[pyPos + 3] == '/') {
-				this->_interpreter = ".py";
-				this->_extention_pos = pyPos + 3;
-				return true;
-			}
-			pyPos = path.find(".py", pyPos + 1);
-		}
-	}
+	cgi_pass = this->_request.location->cgi_pass.find(extention);
 
-    // else search for JavaScript extension followed by end-of-string or '/' (PATH_INFO)
-	cgi_pass = this->_request.location->cgi_pass.find(".js");
-	if (cgi_pass != this->_request.location->cgi_pass.end()) {
-		size_t jsPos = path.find(".js");
-		while (jsPos != String::npos) {
-			if (jsPos + 3 == path.length() || path[jsPos + 3] == '/') {
-				this->_interpreter = ".js";
-				this->_extention_pos = jsPos + 3;
-				return true;
+	// no interpreter was defined in the location for this extention
+	if (cgi_pass == this->_request.location->cgi_pass.end()) return false;
+
+	// while the extention is not part of a file/folder name
+	size_t enxtention_pos = this->_script_name.find(extention);
+	while (enxtention_pos != String::npos) {
+		// check potential path info
+		if (enxtention_pos + 3 == this->_script_name.length()
+			|| this->_script_name[enxtention_pos + 3] == '/') {
+			this->_interpreter = extention;
+
+			// separate script name and path info
+			if (enxtention_pos + 3 < this->_script_name.length()) {
+				this->_path_info = this->_script_name.substr(enxtention_pos + 3);
+				this->_script_name = this->_script_name.substr(0, enxtention_pos + 3);
 			}
-			jsPos = path.find(".js", jsPos + 1);
+
+			this->_is_cgi_request = true;
+			this->_client_connection.response.is_cgi_response = true;
+			return true;
 		}
+
+		enxtention_pos = this->_script_name.find(extention, enxtention_pos + 1);
 	}
 
 	return false;
 }
+
+
 
 
 void	ProcessRequest::parseCGIHeaders() {
