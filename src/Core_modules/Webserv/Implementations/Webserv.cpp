@@ -1,13 +1,19 @@
 #include "../Definitions/Webserv.hpp"
+#include <csignal>
 
 // INFO: constructors/destructor
 // -------------------------------------------------
+
+sig_atomic_t Webserv::signal_status = 0;
+
 Webserv::Webserv()
-	: error_log("Log/error_log.txt") {
+	: error_log("./error-log/error_log.txt") {
 	this->servers = NULL;
 	this->sockets_map = NULL;
 	this->epfd = epoll_create(1);
 	this->events_size = 0;
+
+	signal(SIGINT, catch_sigint);
 }
 
 
@@ -16,6 +22,10 @@ Webserv::~Webserv() {
 	delete this->sockets_map;
 	CloseSocket(this->epfd);
 	this->error_log.close();
+
+	std::for_each(this->server_sockets.begin(),
+				  this->server_sockets.end(),
+				  Webserv::cleanup);
 }
 
 // -------------------------------------------------
@@ -106,5 +116,27 @@ void	Webserv::reapCGIUnfinishedProcesses() {
 	}
 }
 
+
+
+void Webserv::catch_sigint(sig_atomic_t signum) {
+	Webserv::signal_status = signum;
+}
+
+
+
+void Webserv::cleanup(Connection* connection) {
+	CloseSocket(connection->fd);
+	delete connection;
+}
+
+
+
+bool	Webserv::isServerInterupted() {
+	if (Webserv::signal_status == SIGINT) {
+		return true;
+	}
+
+	return false;
+}
 
 // -------------------------------------------------

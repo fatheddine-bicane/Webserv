@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
 		// Initialize EpollMultiplexer
 		ServerMultiplexing multiplexer = ServerMultiplexing(parser.getAddresses(), webserv.epfd);
-		multiplexer.bootstrapServerListeners();
+		webserv.server_sockets = multiplexer.bootstrapServerListeners();
 		webserv.setSocketsMap(multiplexer.getSocketsMap());
 	} catch (ParserException& e) {
 		std::cout << e.what() << std::endl;
@@ -33,6 +33,8 @@ int main(int argc, char** argv) {
 	}
 
 	while (true) {
+		if (webserv.isServerInterupted()) return EXIT_FAILURE;
+
 		webserv.getReadySockets();
 
 		for (int index = 0; index < webserv.events_size; index++) {
@@ -57,9 +59,6 @@ int main(int argc, char** argv) {
 						if (client_connection->response.is_served) {
 							// clear connection
                             webserv.removeClient(client_connection);
-							// if (client_connection->response.is_cgi_response) {
-							//
-							// }
 						}
 
 					} catch (ClientSocketErrorException& e) {

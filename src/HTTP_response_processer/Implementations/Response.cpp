@@ -283,6 +283,8 @@ String	Response::getContentType(const String& file_name) {
 
 
 bool	Response::attemptOpeningErrorPageFile(HTTPStatus HTTP_status) {
+	if (this->_client_connection->request.location == NULL) return false;
+
 	std::map<int, String>& error_pages =
 		this->_client_connection->request.location->shared_directives.error_page;
 

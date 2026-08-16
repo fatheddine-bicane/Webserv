@@ -52,37 +52,32 @@ public:
 public:
 	// INFO: api
 	void	processRequest();
-	// send response
-
-	// cgi processors
+	// INFO: cgi pipe content processors api
 	void	monitoreCGIPipe(EP_INSTANCE epfd);
 	void	readCGIPipe(EP_INSTANCE epfd);
 	void	parseCGIHeaders();
 	bool	isCGISucceed(std::vector<pid_t>& cgis_to_reap);
 
 private:
+	// INFO: url parsers helpers
 	void	splitURLFromQeury();
-
-
-	String	getFilePath();
+	void	checkPotentialCGIRequest();
+	bool	findScriptInterpreter(const String& extention);
 	void	resolveFilePath();
 	void	checkPotentialIndex();
 
 
-
-	// cgi
+	// INFO: cgi helpers
 	void	processCGIRequest();
 	void	setPathEnvVariables(std::vector<String>& env);
 	void	setHeadersEnvVariables(std::vector<String>& env);
 	void	setUpChildProcess(PIPE& fds, std::vector<String>& env);
 	void	setUpParentProcess(PIPE& fds);
-
-	void	checkPotentialCGIRequest();
-	bool	findScriptInterpreter(const String& extention);
-
 	void	readCGIHeaders(char* buffer, ssize_t bytes_read);
 	void	readCGIBody(char* buffer, ssize_t bytes_read);
 
+
+	// INFO: get helpers
 	void	processGetRequest();
 	void	renderDirectoryListing();
 

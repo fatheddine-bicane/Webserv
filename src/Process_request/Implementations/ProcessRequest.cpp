@@ -45,26 +45,25 @@ void	ProcessRequest::processRequest() {
 
 	resolveFilePath();
 
-	try {
-		checkPotentialIndex();
+	checkPotentialIndex();
 
+
+	/*
+		NOTE:
+	  each handler should mark there request state
+	  as 'COMPLETE' in case of success and in the case of
+	  failure mark the request state 'MALFORMED' by throwing
+	  the 'ProcessRequestException' exception with
+	  the correct http status code
+	*/
+	try {
 		if (this->_is_cgi_request) {
 			processCGIRequest();
 			return;
 		}
 
-
-		// NOTE: each handler should mark there request state
-		// as 'COMPLETE' in case of success and in the case of
-		// failure mark the request state 'MALFORMED' using the
-		// the exposed setRequestState() method, and set the
-		// status code to the right HTTP status code and throw
-		// the 'ProcessRequestException' exception
 		switch (this->_request.method) {
-			case GET:
-				processGetRequest();
-				// handle get
-				break;
+			case GET: processGetRequest(); break;
 
 			case POST:
 				// handle post
@@ -84,7 +83,12 @@ void	ProcessRequest::processRequest() {
 	}
 }
 
+// -----------------------------------------------------------
 
+
+
+// INFO: cgi pipe content processors api
+// -----------------------------------------------------------
 
 void	ProcessRequest::monitoreCGIPipe(EP_INSTANCE epfd) {
 	File pipe_read_end = this->_client_connection.pipe_read_end;
@@ -153,60 +157,109 @@ void	ProcessRequest::readCGIPipe(EP_INSTANCE epfd) {
 
 
 
-void	ProcessRequest::readCGIHeaders(char* buffer, ssize_t bytes_read) {
-    this->_cgi_pipe_buffer.append(buffer, bytes_read);
+void	ProcessRequest::parseCGIHeaders() {
+	std::istringstream header_stream(this->_cgi_headers);
+	String line;
 
-	// parse headers and body separator
-    size_t header_end = this->_cgi_pipe_buffer.find("\r\n\r\n");
-    size_t separator_len = 4;
-    if (header_end == String::npos) {
-        header_end = this->_cgi_pipe_buffer.find("\n\n");
-        separator_len = 2;
-    }
+	this->_request.status_code = OK;
 
-	// headers not received fully
-    if (header_end == String::npos) {
-        return; 
-    }
-
-	// body parser
-	// extract and process headers
-	int seperator = (separator_len == 4) ? 2 : 1;
-    this->_cgi_headers = this->_cgi_pipe_buffer.substr(0, header_end + seperator);
-    String body = this->_cgi_pipe_buffer.substr(header_end + separator_len);
-
-    if (!body.empty()) {
-		std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
-								std::ios::binary | std::ios::app);
-		if (!tmp_file_stream.is_open()) {
-			this->_request.status_code = InternalServerError;
-			this->_request.setRequestState(MALFORMED);
+	while (std::getline(header_stream, line)) {
+		if (line.empty()) {
+			break;
 		}
 
-		this->_client_connection.response.serve_file = true;
+		if (!line.empty() && line[line.size() - 1] == '\r') {
+			line.erase(line.size() - 1);
+		}
 
-		tmp_file_stream.write(body.c_str(), body.length());
-		tmp_file_stream.close();
+		size_t colon_pos = line.find(':');
+		if (colon_pos == String::npos) {
+			continue;
+		}
+
+		String key = line.substr(0, colon_pos);
+		String value = line.substr(colon_pos + 1);
+
+		size_t start = key.find_first_not_of(" \t");
+		size_t end = key.find_last_not_of(" \t");
+		if (start != String::npos) {
+			key = key.substr(start, end - start + 1);
+		}
+
+		start = value.find_first_not_of(" \t");
+		end = value.find_last_not_of(" \t");
+		if (start == String::npos) {
+			value.clear();
+		} else {
+			value = value.substr(start, end - start + 1);
+		}
+
+		String lower_key = key;
+		std::transform(lower_key.begin(), lower_key.end(),
+				 lower_key.begin(), ::tolower);
+
+		if (lower_key == "status") {
+			String status_value = value;
+			size_t space_pos = status_value.find_first_of(" \t");
+			if (space_pos != String::npos) {
+				status_value = status_value.substr(0, space_pos);
+			}
+
+			if (!status_value.empty()) {
+				char* end_ptr = NULL;
+				long parsed_status = std::strtol(status_value.c_str(), &end_ptr, 10);
+				if (end_ptr != status_value.c_str()) {
+					switch (parsed_status) {
+						case 100: this->_request.status_code = Continue; break;
+						case 101: this->_request.status_code = SwitchingProtocols; break;
+						case 200: this->_request.status_code = OK; break;
+						case 201: this->_request.status_code = Created; break;
+						case 202: this->_request.status_code = Accepted; break;
+						case 204: this->_request.status_code = NoContent; break;
+						case 206: this->_request.status_code = PartialContent; break;
+						case 301: this->_request.status_code = MovedPermanently; break;
+						case 302: this->_request.status_code = Found; break;
+						case 303: this->_request.status_code = SeeOther; break;
+						case 304: this->_request.status_code = NotModified; break;
+						case 307: this->_request.status_code = TemporaryRedirect; break;
+						case 308: this->_request.status_code = PermanentRedirect; break;
+						case 400: this->_request.status_code = BadRequest; break;
+						case 401: this->_request.status_code = Unauthorized; break;
+						case 403: this->_request.status_code = Forbidden; break;
+						case 404: this->_request.status_code = NotFound; break;
+						case 405: this->_request.status_code = MethodNotAllowed; break;
+						case 408: this->_request.status_code = RequestTimeout; break;
+						case 409: this->_request.status_code = Conflict; break;
+						case 410: this->_request.status_code = Gone; break;
+						case 411: this->_request.status_code = LengthRequired; break;
+						case 413: this->_request.status_code = PayloadTooLarge; break;
+						case 414: this->_request.status_code = URITooLong; break;
+						case 415: this->_request.status_code = UnsupportedMediaType; break;
+						case 417: this->_request.status_code = ExpectationFailed; break;
+						case 426: this->_request.status_code = UpgradeRequired; break;
+						case 500: this->_request.status_code = InternalServerError; break;
+						case 501: this->_request.status_code = NotImplemented; break;
+						case 502: this->_request.status_code = BadGateway; break;
+						case 503: this->_request.status_code = ServiceUnavailable; break;
+						case 504: this->_request.status_code = GatewayTimeout; break;
+						case 505: this->_request.status_code = HTTPVersionNotSupported; break;
+						default: this->_request.status_code = InternalServerError; break;
+					}
+				}
+			}
+			continue;
+		}
+
+		if (lower_key == "content-type") {
+			this->_client_connection.response.appendHeaders("Content-Type", value);
+			continue;
+		}
+
+		if (lower_key == "content-length") {
+			this->_client_connection.response.appendHeaders("Content-Length", value);
+			continue;
+		}
 	}
-
-    this->_cgi_state = READING_BODY;
-    this->_cgi_pipe_buffer.clear();
-}
-
-
-
-void	ProcessRequest::readCGIBody(char* buffer, ssize_t bytes_read) {
-	this->_client_connection.response.serve_file = true;
-
-	std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
-							      std::ios::binary | std::ios::app);
-	if (!tmp_file_stream.is_open()) {
-		this->_request.status_code = InternalServerError;
-		this->_request.setRequestState(MALFORMED);
-	}
-
-	tmp_file_stream.write(buffer, bytes_read);
-	tmp_file_stream.close();
 }
 
 
@@ -241,12 +294,12 @@ bool	ProcessRequest::isCGISucceed(std::vector<pid_t>& cgis_to_reap) {
 	return false;
 }
 
-
-
 // -----------------------------------------------------------
 
 
 
+// INFO: url parsers helpers
+// -----------------------------------------------------------
 
 void	ProcessRequest::splitURLFromQeury() {
 	// strip the query string if it exists
@@ -262,6 +315,46 @@ void	ProcessRequest::splitURLFromQeury() {
 }
 
 
+void	ProcessRequest::checkPotentialCGIRequest() {
+	if (findScriptInterpreter(".py")) return;
+	else if (findScriptInterpreter(".js")) return;
+}
+
+
+
+bool	ProcessRequest::findScriptInterpreter(const String& extention) {
+	std::map<String, String>::iterator cgi_pass;
+	cgi_pass = this->_request.location->cgi_pass.find(extention);
+
+	// no interpreter was defined in the location for this extention
+	if (cgi_pass == this->_request.location->cgi_pass.end()) return false;
+
+	// while the extention is not part of a file/folder name
+	size_t enxtention_pos = this->_script_name.find(extention);
+	while (enxtention_pos != String::npos) {
+		// check potential path info
+		if (enxtention_pos + 3 == this->_script_name.length()
+			|| this->_script_name[enxtention_pos + 3] == '/') {
+			this->_interpreter = extention;
+
+			// separate script name and path info
+			if (enxtention_pos + 3 < this->_script_name.length()) {
+				this->_path_info = this->_script_name.substr(enxtention_pos + 3);
+				this->_script_name = this->_script_name.substr(0, enxtention_pos + 3);
+			}
+
+			this->_is_cgi_request = true;
+			this->_client_connection.response.is_cgi_response = true;
+			return true;
+		}
+
+		enxtention_pos = this->_script_name.find(extention, enxtention_pos + 1);
+	}
+
+	return false;
+}
+
+
 
 void	ProcessRequest::resolveFilePath() {
 	String& clean_uri = this->_script_name;
@@ -269,7 +362,7 @@ void	ProcessRequest::resolveFilePath() {
 	// ROOT directive gets priority
 	if (!this->_request.location->shared_directives.root.empty()) {
 		this->_file_path = this->_request.location->shared_directives.root + clean_uri;
-	} 
+	}
 	// ALIAS directive fallback
 	else if (!this->_request.location->alias.empty()) {
 		String uri_remainder;
@@ -341,10 +434,23 @@ void    ProcessRequest::checkPotentialIndex() {
 	}
 }
 
+// -----------------------------------------------------------
 
 
+
+
+// INFO: cgi helpers
+// -----------------------------------------------------------
 
 void	ProcessRequest::processCGIRequest() {
+	// check if file exists and is readable
+	if (access(this->_file_path.c_str(), F_OK) == -1) {
+		throw ProcessRequestException(NotFound);
+	}
+	if (access(this->_file_path.c_str(), R_OK) == -1) {
+		throw ProcessRequestException(Forbidden);
+	}
+
 	std::vector<String> env;
 
 	setPathEnvVariables(env);
@@ -483,154 +589,70 @@ void	ProcessRequest::setUpParentProcess(PIPE& fds) {
 
 
 
-void	ProcessRequest::checkPotentialCGIRequest() {
-	if (findScriptInterpreter(".py")) return;
-	else if (findScriptInterpreter(".js")) return;
-}
+void	ProcessRequest::readCGIHeaders(char* buffer, ssize_t bytes_read) {
+    this->_cgi_pipe_buffer.append(buffer, bytes_read);
 
-bool	ProcessRequest::findScriptInterpreter(const String& extention) {
-	std::map<String, String>::iterator cgi_pass;
-	cgi_pass = this->_request.location->cgi_pass.find(extention);
+	// parse headers and body separator
+    size_t header_end = this->_cgi_pipe_buffer.find("\r\n\r\n");
+    size_t separator_len = 4;
+    if (header_end == String::npos) {
+        header_end = this->_cgi_pipe_buffer.find("\n\n");
+        separator_len = 2;
+    }
 
-	// no interpreter was defined in the location for this extention
-	if (cgi_pass == this->_request.location->cgi_pass.end()) return false;
+	// headers not received fully
+    if (header_end == String::npos) {
+        return; 
+    }
 
-	// while the extention is not part of a file/folder name
-	size_t enxtention_pos = this->_script_name.find(extention);
-	while (enxtention_pos != String::npos) {
-		// check potential path info
-		if (enxtention_pos + 3 == this->_script_name.length()
-			|| this->_script_name[enxtention_pos + 3] == '/') {
-			this->_interpreter = extention;
+	// body parser
+	// extract and process headers
+	int seperator = (separator_len == 4) ? 2 : 1;
+    this->_cgi_headers = this->_cgi_pipe_buffer.substr(0, header_end + seperator);
+    String body = this->_cgi_pipe_buffer.substr(header_end + separator_len);
 
-			// separate script name and path info
-			if (enxtention_pos + 3 < this->_script_name.length()) {
-				this->_path_info = this->_script_name.substr(enxtention_pos + 3);
-				this->_script_name = this->_script_name.substr(0, enxtention_pos + 3);
-			}
-
-			this->_is_cgi_request = true;
-			this->_client_connection.response.is_cgi_response = true;
-			return true;
+    if (!body.empty()) {
+		std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
+								std::ios::binary | std::ios::app);
+		if (!tmp_file_stream.is_open()) {
+			this->_request.status_code = InternalServerError;
+			this->_request.setRequestState(MALFORMED);
 		}
 
-		enxtention_pos = this->_script_name.find(extention, enxtention_pos + 1);
+		this->_client_connection.response.serve_file = true;
+
+		tmp_file_stream.write(body.c_str(), body.length());
+		tmp_file_stream.close();
 	}
 
-	return false;
+    this->_cgi_state = READING_BODY;
+    this->_cgi_pipe_buffer.clear();
 }
 
 
 
+void	ProcessRequest::readCGIBody(char* buffer, ssize_t bytes_read) {
+	this->_client_connection.response.serve_file = true;
 
-void	ProcessRequest::parseCGIHeaders() {
-	std::istringstream header_stream(this->_cgi_headers);
-	String line;
-
-	this->_request.status_code = OK;
-
-	while (std::getline(header_stream, line)) {
-		if (line.empty()) {
-			break;
-		}
-
-		if (!line.empty() && line[line.size() - 1] == '\r') {
-			line.erase(line.size() - 1);
-		}
-
-		size_t colon_pos = line.find(':');
-		if (colon_pos == String::npos) {
-			continue;
-		}
-
-		String key = line.substr(0, colon_pos);
-		String value = line.substr(colon_pos + 1);
-
-		size_t start = key.find_first_not_of(" \t");
-		size_t end = key.find_last_not_of(" \t");
-		if (start != String::npos) {
-			key = key.substr(start, end - start + 1);
-		}
-
-		start = value.find_first_not_of(" \t");
-		end = value.find_last_not_of(" \t");
-		if (start == String::npos) {
-			value.clear();
-		} else {
-			value = value.substr(start, end - start + 1);
-		}
-
-		String lower_key = key;
-		std::transform(lower_key.begin(), lower_key.end(),
-					   lower_key.begin(), ::tolower);
-
-		if (lower_key == "status") {
-			String status_value = value;
-			size_t space_pos = status_value.find_first_of(" \t");
-			if (space_pos != String::npos) {
-				status_value = status_value.substr(0, space_pos);
-			}
-
-			if (!status_value.empty()) {
-				char* end_ptr = NULL;
-				long parsed_status = std::strtol(status_value.c_str(), &end_ptr, 10);
-				if (end_ptr != status_value.c_str()) {
-					switch (parsed_status) {
-						case 100: this->_request.status_code = Continue; break;
-						case 101: this->_request.status_code = SwitchingProtocols; break;
-						case 200: this->_request.status_code = OK; break;
-						case 201: this->_request.status_code = Created; break;
-						case 202: this->_request.status_code = Accepted; break;
-						case 204: this->_request.status_code = NoContent; break;
-						case 206: this->_request.status_code = PartialContent; break;
-						case 301: this->_request.status_code = MovedPermanently; break;
-						case 302: this->_request.status_code = Found; break;
-						case 303: this->_request.status_code = SeeOther; break;
-						case 304: this->_request.status_code = NotModified; break;
-						case 307: this->_request.status_code = TemporaryRedirect; break;
-						case 308: this->_request.status_code = PermanentRedirect; break;
-						case 400: this->_request.status_code = BadRequest; break;
-						case 401: this->_request.status_code = Unauthorized; break;
-						case 403: this->_request.status_code = Forbidden; break;
-						case 404: this->_request.status_code = NotFound; break;
-						case 405: this->_request.status_code = MethodNotAllowed; break;
-						case 408: this->_request.status_code = RequestTimeout; break;
-						case 409: this->_request.status_code = Conflict; break;
-						case 410: this->_request.status_code = Gone; break;
-						case 411: this->_request.status_code = LengthRequired; break;
-						case 413: this->_request.status_code = PayloadTooLarge; break;
-						case 414: this->_request.status_code = URITooLong; break;
-						case 415: this->_request.status_code = UnsupportedMediaType; break;
-						case 417: this->_request.status_code = ExpectationFailed; break;
-						case 426: this->_request.status_code = UpgradeRequired; break;
-						case 500: this->_request.status_code = InternalServerError; break;
-						case 501: this->_request.status_code = NotImplemented; break;
-						case 502: this->_request.status_code = BadGateway; break;
-						case 503: this->_request.status_code = ServiceUnavailable; break;
-						case 504: this->_request.status_code = GatewayTimeout; break;
-						case 505: this->_request.status_code = HTTPVersionNotSupported; break;
-						default: this->_request.status_code = InternalServerError; break;
-					}
-				}
-			}
-			continue;
-		}
-
-		if (lower_key == "content-type") {
-			this->_client_connection.response.appendHeaders("Content-Type", value);
-			continue;
-		}
-
-		if (lower_key == "content-length") {
-			this->_client_connection.response.appendHeaders("Content-Length", value);
-			continue;
-		}
+	std::ofstream tmp_file_stream(this->_cgi_body_file_name.c_str(),
+							      std::ios::binary | std::ios::app);
+	if (!tmp_file_stream.is_open()) {
+		this->_request.status_code = InternalServerError;
+		this->_request.setRequestState(MALFORMED);
 	}
 
-
+	tmp_file_stream.write(buffer, bytes_read);
+	tmp_file_stream.close();
 }
 
+// -----------------------------------------------------------
 
+
+
+
+
+// INFO: get helpers
+// -----------------------------------------------------------
 
 void	ProcessRequest::processGetRequest() {
 	// check if file exists and is readable
@@ -710,7 +732,4 @@ void	ProcessRequest::renderDirectoryListing() {
 	this->_client_connection.response.appendDirectoryListeningBody(html);
 }
 
-
 // -----------------------------------------------------------
-
-

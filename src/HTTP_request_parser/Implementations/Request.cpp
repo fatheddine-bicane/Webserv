@@ -14,6 +14,7 @@ Request::Request(SOCKET fd, ClientConnection* client_connection) {
 	this->_state = START_LINE;
 	this->_expect_CRLF = false;
 	this->_total_received_bytes = 0;
+	this->location = NULL;
 }
 
 // --------------------------------------------
@@ -235,7 +236,8 @@ bool	Request::parseTargetResource(String& start_line) {
 		return malformedRequest(URITooLong);
 	}
 	
-	if (target_resource.find("../") != String::npos) {
+	if (target_resource.find("../") != String::npos
+		|| target_resource.find("/..") != String::npos) {
 		return malformedRequest(Forbidden);
 	}
 
