@@ -47,24 +47,23 @@ void	ProcessRequest::processRequest() {
 
 	checkPotentialIndex();
 
+
+	/*
+		NOTE:
+	  each handler should mark there request state
+	  as 'COMPLETE' in case of success and in the case of
+	  failure mark the request state 'MALFORMED' by throwing
+	  the 'ProcessRequestException' exception with
+	  the correct http status code
+	*/
 	try {
 		if (this->_is_cgi_request) {
 			processCGIRequest();
 			return;
 		}
 
-
-		// NOTE: each handler should mark there request state
-		// as 'COMPLETE' in case of success and in the case of
-		// failure mark the request state 'MALFORMED' using the
-		// the exposed setRequestState() method, and set the
-		// status code to the right HTTP status code and throw
-		// the 'ProcessRequestException' exception
 		switch (this->_request.method) {
-			case GET:
-				processGetRequest();
-				// handle get
-				break;
+			case GET: processGetRequest(); break;
 
 			case POST:
 				// handle post
