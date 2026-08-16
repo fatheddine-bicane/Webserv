@@ -7,7 +7,7 @@
 sig_atomic_t Webserv::signal_status = 0;
 
 Webserv::Webserv()
-	: error_log("Log/error_log.txt") {
+	: error_log("./error-log/error_log.txt") {
 	this->servers = NULL;
 	this->sockets_map = NULL;
 	this->epfd = epoll_create(1);
