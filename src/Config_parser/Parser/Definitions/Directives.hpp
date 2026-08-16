@@ -21,7 +21,6 @@ public:
 	bool								autoindex; // defaule: false
 	std::vector<String>					index; // defaule: index, index.html;
 	std::set<String>					dav_methods; // default: off--deny all methods
-	// bool								create_full_put_path; // default: false
 
 public:
 	/**

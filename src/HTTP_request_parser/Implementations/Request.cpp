@@ -113,6 +113,8 @@ void	Request::parseFieldLine() {
 		// map location block
 		if (!findLocationBlock()) return;
 
+		if (!isReqeustMethodAllowed()) return;
+
 		// if no content length or encoding header was sent
 		// then the request dosent contain body and its complete
 		else if (!transferEncodingPresent() && !contentLengthPresent()) {
@@ -206,8 +208,6 @@ bool	Request::parseMethod(String& start_line) {
 		this->method = POST;
 	} else if (method == "DELETE") {
 		this->method = DELETE;
-	} else if (method == "PUT") {
-		this->method = PUT;
 	}
 
 	// if server dosent recognize the method
@@ -233,6 +233,10 @@ bool	Request::parseTargetResource(String& start_line) {
 	// server limit refusing to process long URIs
 	if (target_resource.length() >= 100) {
 		return malformedRequest(URITooLong);
+	}
+	
+	if (target_resource.find("../") != String::npos) {
+		return malformedRequest(Forbidden);
 	}
 
 	this->target_resource = target_resource;
@@ -793,6 +797,25 @@ bool	Request::findLocationBlock() {
 		else {
 			return malformedRequest(NotFound);
 		}
+	}
+
+	return true;
+}
+
+
+
+bool	Request::isReqeustMethodAllowed() {
+	String method;
+
+	switch (this->method) {
+		case GET: method = "GET"; break;
+		case POST: method = "POST"; break;
+		case DELETE: method = "DELETE"; break;
+	}
+
+	std::set<String>& limit_except = this->location->limit_except;
+	if (limit_except.find(method) == limit_except.end()) {
+		return malformedRequest(MethodNotAllowed);
 	}
 
 	return true;

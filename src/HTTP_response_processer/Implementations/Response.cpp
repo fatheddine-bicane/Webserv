@@ -25,7 +25,6 @@ Response::~Response() {
 
 	// if its a cgi remove the tmp body file
 	if (this->is_cgi_response && this->serve_file) {
-		std::cout << this->_file_to_send_name << std::endl;
 		unlink(this->_file_to_send_name.c_str());
 	}
 }
@@ -64,17 +63,17 @@ void	Response::initializeResponseObject() {
 	// responde with a file
 	else if (this->serve_file) {
 		// append file related headers
-		if (!this->content_type_is_set) {
-			appendHeaders("Content-Type", getContentType());
-		}
-		if (!this->content_length_is_set) {
-			appendHeaders("Content-Length", getContentLength());
-		}
+		appendHeaders("Content-Type", getContentType());
+		appendHeaders("Content-Length", getContentLength());
 
 		this->_staging_buffer = this->_headers;
 		this->_response_state = DISK_FILE;
 		// send the stored headers
 		this->_disk_file_state = STAGED_BUFFER_READY;
+	}
+
+	else if (this->_response_state == DIRECTORY_LISTING_HTML_BODY) {
+		this->_staging_buffer = this->_headers + this->_staging_buffer;
 	}
 
 	// else there is no file to serve just headers
@@ -88,7 +87,16 @@ void	Response::initializeResponseObject() {
 
 
 void	Response::appendHeaders(const String& key, const String& value) {
+	if (key == "Content-Length" && this->content_length_is_set) return;
+	else if (key == "Content-Type" && this->content_type_is_set) return;
+
 	this->_headers += key + ": " + value + "\r\n";
+
+	if (key == "Content-Length") {
+		this->content_length_is_set = true;
+	} else if (key == "Content-Type") {
+		this->content_type_is_set = true;
+	}
 }
 
 
@@ -111,6 +119,7 @@ void	Response::sendResponse() {
 
 		case BUILT_BODY:
 		case NAKED_HEADERS:
+		case DIRECTORY_LISTING_HTML_BODY:
 			sendStagedBufferPayload();
 			break;
 
@@ -128,6 +137,15 @@ void	Response::sendResponse() {
 	// response is not fully served yet
 }
 
+
+void	Response::appendDirectoryListeningBody(const String& body) {
+	this->_response_state = DIRECTORY_LISTING_HTML_BODY;
+	this->_staging_buffer = body;
+}
+
+void	Response::appendCTLF() {
+	this->_headers += "\r\n";
+}
 
 // -----------------------------------------------------------
 
@@ -205,8 +223,21 @@ void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 	ss.str("");
 	ss.clear();
 
-	ss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n"
-	   << this->_headers << "\r\n";
+
+
+	ss << "HTTP/1.1 " << status_code << " " << reason_phrase << "\r\n";
+
+	if (HTTP_status < 400) {
+		// append file related headers
+		appendHeaders("Content-Type", getContentType());
+		appendHeaders("Content-Length", getContentLength());
+		appendCTLF();
+		
+		ss << this->_headers;
+	} else {
+		ss << this->_headers;
+	}
+
 	this->_headers = ss.str();
 }
 
@@ -263,12 +294,9 @@ bool	Response::attemptOpeningErrorPageFile(HTTPStatus HTTP_status) {
 	if (!openFileToSend(error_page->second)) return false;
 
 	// append file related headers
-	if (!this->content_type_is_set) {
-		appendHeaders("Content-Type", getContentType(error_page->second));
-	}
-	if (!this->content_length_is_set) {
-		appendHeaders("Content-Length", getContentLength());
-	}
+	appendHeaders("Content-Type", getContentType(error_page->second));
+	appendHeaders("Content-Length", getContentLength());
+	appendCTLF();
 
 	return true;
 }
@@ -297,6 +325,7 @@ String	Response::buildErrorPage(HTTPStatus HTTP_status) {
 
 	appendHeaders("Content-Type", "text/html");
 	appendHeaders("Content-Length", content_length);
+	appendCTLF();
 
 	return error_page;
 }

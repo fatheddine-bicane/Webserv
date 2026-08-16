@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Core_modules/Typedef.hpp"
-#include "../../Config_parser/Parser/Definitions/Directives.hpp"
+#include "../../config_parser/Parser/Definitions/Directives.hpp"
 #include "../../Core_modules/HTTPStatus.hpp"
 #include "../Exceptions/ResponseExceptions.hpp"
 #include <cstddef>
@@ -17,7 +17,7 @@ private:
 	enum ResponseState {
 		DISK_FILE, BUILT_BODY,
 		NAKED_HEADERS, RESPONS_SERVED,
-		CONNECTION_CLOSED
+		CONNECTION_CLOSED, DIRECTORY_LISTING_HTML_BODY
 	};
 
 	enum DiskFileState {
@@ -60,6 +60,8 @@ public:
 	void	sendResponse();
 	bool	openFileToSend(const String& file_name);
 	void	appendHeaders(const String& key, const String& value);
+	void	appendDirectoryListeningBody(const String& body);
+	void	appendCTLF();
 
 
 	// INFO: helper functions
