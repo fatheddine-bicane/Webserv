@@ -15,6 +15,7 @@ class ClientConnection;
 class Response {
 private:
 	enum ResponseState {
+		DEFAULT,
 		DISK_FILE, BUILT_BODY,
 		NAKED_HEADERS, RESPONS_SERVED,
 		CONNECTION_CLOSED, DIRECTORY_LISTING_HTML_BODY

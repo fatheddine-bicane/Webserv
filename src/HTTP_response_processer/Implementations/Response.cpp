@@ -9,6 +9,7 @@
 
 Response::Response(ClientConnection* client_connection) 
 	: _client_connection(client_connection),
+	  _response_state(DEFAULT),
 	  _bytes_sent(0),
 	  serve_file(false),
 	  is_served(false),
