@@ -717,3 +717,33 @@ void	ProcessRequest::renderDirectoryListing() {
 
 	this->_client_connection->response.appendDirectoryListeningBody(html);
 }
+
+void	ProcessRequest::processDeleteRequest(){
+	if(access(this->_file_path.c_str(), F_OK) == -1) {
+		throw ProcessRequestException(NotFound);
+	}
+
+	struct stat info;
+	if (stat(this->_file_path.c_str(), &info) != 0) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	if(S_ISDIR(info.st_mode)){
+		throw ProcessRequestException(MethodNotAllowed);
+	}
+
+	if (!S_ISREG(info.st_mode)){
+		throw ProcessRequestException(Forbidden);
+	}
+
+	if(remove(this->_file_path.c_str()) == -1) {
+		if (errno == EACCES || errno == EPERM) {		
+			throw ProcessRequestException(Forbidden);
+		}
+
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	this->_request.status_code = NoContent;
+	this->_request.setRequestState(COMPLETE);
+}
