@@ -17,7 +17,7 @@
 #include "../../Connection/Definitions/ServerConnection.hpp"
 #include "../../Connection/Definitions/ClientConnection.hpp"
 #include "../../Connection/Exceptions/ConnectionExceptions.hpp"
-#include "../../../Process_request/Definitions/ProcessRequest.hpp"
+#include "../../../HTTP_request_processer/Definitions/ProcessRequest.hpp"
 #include "../../Typedef.hpp"
 
 #define MAX_EVENTS 10
