@@ -52,7 +52,9 @@ SharedDirectives::SharedDirectives(const SharedDirectives& other) {
 // INFO: Location
 // ---------------------------------------------------
 Location::Location(const SharedDirectives& inherited_directives)
-	: shared_directives(inherited_directives) {}
+	: shared_directives(inherited_directives) {
+	this->return_d.first = false;
+}
 // ---------------------------------------------------
 
 

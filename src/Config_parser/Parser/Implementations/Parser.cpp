@@ -534,8 +534,8 @@ String	Parser::parseServerName() {
 }
 
 
-
-void	Parser::parseReturn(std::pair<int, String>& return_d) {
+void	Parser::parseReturn(std::pair<bool, std::pair<int, String> >& return_d) {
+	return_d.first = true;
 	Token token = consume();
 
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
@@ -548,14 +548,14 @@ void	Parser::parseReturn(std::pair<int, String>& return_d) {
 		throw InvalidValueExceptions(token, "return", this->_source);
 	}
 
-	return_d.first = error_value;
+	return_d.second.first = error_value;
 
 	token = consume();
 	if (match(token, SEMICOLON) || !match(token, VALUE)) {
 		throw InvalidNumberOfArgumentsException(previousToken(), this->_source);
 	}
 
-	return_d.second = token.lexeme;
+	return_d.second.second = token.lexeme;
 
 	expect(SEMICOLON);
 }
