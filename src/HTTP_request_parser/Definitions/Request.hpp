@@ -41,6 +41,8 @@ enum RequestState {
 	COMPLETE,
 	// request parsed and its not correct
 	MALFORMED,
+	// redirect request
+	REDIRECT,
 	// cgi request
 	CGI,
 	MONITORE_PIPE, READ_CGI_PIPE, CGI_PIPE_DRAINED
@@ -157,6 +159,7 @@ private:
 	bool	contentLengthPresent();
 	String	generateRandomFileName();
 	bool	findLocationBlock();
+	bool	checkLocationRedirection();
 	bool	isReqeustMethodAllowed();
 
 

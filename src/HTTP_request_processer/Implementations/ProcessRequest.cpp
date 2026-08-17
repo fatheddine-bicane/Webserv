@@ -35,7 +35,8 @@ ProcessRequest::ProcessRequest(Request& request, Server& server,
 // -----------------------------------------------------------
 
 void	ProcessRequest::processRequest() {
-	if (this->_request.isRequestState(MALFORMED)) {
+	if (this->_request.isRequestState(MALFORMED)
+		|| this->_request.isRequestState(REDIRECT)) {
 		return;
 	}
 

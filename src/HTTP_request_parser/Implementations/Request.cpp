@@ -54,7 +54,8 @@ bool	Request::isRequestState(RequestState request_state) {
 
 	else if (request_state == READY_TO_SERVE) {
 		return (this->_state == COMPLETE
-				|| this->_state == MALFORMED);
+				|| this->_state == MALFORMED
+				|| this->_state == REDIRECT);
 	}
 
 	else if (request_state == CGI) {
@@ -113,6 +114,8 @@ void	Request::parseFieldLine() {
 
 		// map location block
 		if (!findLocationBlock()) return;
+
+		if (checkLocationRedirection()) return;
 
 		if (!isReqeustMethodAllowed()) return;
 
@@ -800,6 +803,24 @@ bool	Request::findLocationBlock() {
 			return malformedRequest(NotFound);
 		}
 	}
+
+	return true;
+}
+
+
+
+bool	Request::checkLocationRedirection() {
+	if (!this->location->return_d.first) {
+		return false;
+	}
+
+	String& url = this->location->return_d.second.second;
+	this->_connection->response.appendHeaders("Location", url);
+
+	this->status_code =
+		static_cast<HTTPStatus>(this->location->return_d.second.first);
+
+	this->_state = REDIRECT;
 
 	return true;
 }
