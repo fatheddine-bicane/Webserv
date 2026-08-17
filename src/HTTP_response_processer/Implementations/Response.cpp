@@ -63,10 +63,6 @@ void	Response::initializeResponseObject() {
 
 	// responde with a file
 	else if (this->serve_file) {
-		// append file related headers
-		appendHeaders("Content-Type", getContentType());
-		appendHeaders("Content-Length", getContentLength());
-
 		this->_staging_buffer = this->_headers;
 		this->_response_state = DISK_FILE;
 		// send the stored headers
