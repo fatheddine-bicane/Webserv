@@ -230,8 +230,11 @@ void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 
 	if (HTTP_status < 400) {
 		// append file related headers
-		appendHeaders("Content-Type", getContentType());
-		appendHeaders("Content-Length", getContentLength());
+		if (this->serve_file) {
+			appendHeaders("Content-Type", getContentType());
+			appendHeaders("Content-Length", getContentLength());
+		}
+
 		appendCTLF();
 		
 		ss << this->_headers;
