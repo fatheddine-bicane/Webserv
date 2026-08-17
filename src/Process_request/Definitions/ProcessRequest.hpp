@@ -82,8 +82,20 @@ private:
 	void	renderDirectoryListing();
 
 
-
+	// INFO: post helpers
 	void	processPostRequest();
+
+	bool	isMultiPartFromData();
+	bool	isDirectory(const String& path);
+	bool	ensureDirectoryExists(const String& path);
+	void	handleMultipartUpload(String& tmpFileName,
+								  String& uploadDir);
+	String	getBoundary(const String& header);
+	String	sanitizeFilename(const String& filename);
+	void	removeTmpBodyFile(const String& tmpFileName);
+
+
+
 	void	processDeleteRequest();
 	void	processMalformedRequest();
 
