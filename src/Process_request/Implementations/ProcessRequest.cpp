@@ -309,11 +309,56 @@ void	ProcessRequest::splitURLFromQeury() {
 	size_t query_pos = clean_uri.find('?');
 	if (query_pos != String::npos) {
 		this->_query_string = clean_uri.substr(query_pos + 1);
+		decodeUriComponent(this->_query_string);
+
 		clean_uri = clean_uri.substr(0, query_pos);
 	}
 
 	this->_script_name = clean_uri;
+	decodeUriComponent(this->_script_name);
 }
+
+
+
+int	ProcessRequest::hexCharToInt(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return 0;
+}
+
+
+
+void	ProcessRequest::decodeUriComponent(String& uri_component) {
+    String result;
+
+    for (size_t i = 0; i < uri_component.length(); i++) {
+		// if the current char is not an encoded char
+		if (!((uri_component[i] == '%') && (i + 2 < uri_component.length()))) {
+			result += uri_component[i];
+			continue;
+		}
+
+		// else
+		// get the two hexa chars
+		char hex1 = uri_component[i + 1];
+		char hex2 = uri_component[i + 2];
+
+		if (std::isxdigit(hex1) && std::isxdigit(hex2)) {
+			char decoded_char = static_cast<char>
+				((hexCharToInt(hex1) << 4) | hexCharToInt(hex2));
+			result += decoded_char;
+			i += 2;
+		}
+
+		else {
+			result += uri_component[i];
+		}
+	}
+
+    uri_component = result;
+}
+
 
 
 void	ProcessRequest::checkPotentialCGIRequest() {

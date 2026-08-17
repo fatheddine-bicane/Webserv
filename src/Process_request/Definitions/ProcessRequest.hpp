@@ -61,6 +61,8 @@ public:
 private:
 	// INFO: url parsers helpers
 	void	splitURLFromQeury();
+	int		hexCharToInt(char c);
+	void	decodeUriComponent(String& uri_component);
 	void	checkPotentialCGIRequest();
 	bool	findScriptInterpreter(const String& extention);
 	void	resolveFilePath();
