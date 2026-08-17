@@ -278,7 +278,6 @@ void	Parser::parseServer(SharedDirectives& directive_context) {
 			case DAV_METHODS:
 				parseDavMethods(server_directive.shared_directives);
 				break;
-			case RETURN: parseReturn(server_directive.return_d); break;
 			case LOCATION:
 				location_block_appered = true;
 				parseLocation(server_directive);

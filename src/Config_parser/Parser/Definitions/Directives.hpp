@@ -60,7 +60,6 @@ class Server {
 public:
 	SharedDirectives		shared_directives;
 	std::list<Location>		locations;
-	std::pair<int, String>	return_d;
 
 public:
 	Server() {}
