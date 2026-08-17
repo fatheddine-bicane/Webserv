@@ -9,6 +9,7 @@
 
 Response::Response(ClientConnection* client_connection) 
 	: _client_connection(client_connection),
+	  _response_state(DEFAULT),
 	  _bytes_sent(0),
 	  serve_file(false),
 	  is_served(false),
@@ -62,10 +63,6 @@ void	Response::initializeResponseObject() {
 
 	// responde with a file
 	else if (this->serve_file) {
-		// append file related headers
-		appendHeaders("Content-Type", getContentType());
-		appendHeaders("Content-Length", getContentLength());
-
 		this->_staging_buffer = this->_headers;
 		this->_response_state = DISK_FILE;
 		// send the stored headers
@@ -229,8 +226,11 @@ void	Response::buildStatusLine(HTTPStatus HTTP_status) {
 
 	if (HTTP_status < 400) {
 		// append file related headers
-		appendHeaders("Content-Type", getContentType());
-		appendHeaders("Content-Length", getContentLength());
+		if (this->serve_file) {
+			appendHeaders("Content-Type", getContentType());
+			appendHeaders("Content-Length", getContentLength());
+		}
+
 		appendCTLF();
 		
 		ss << this->_headers;

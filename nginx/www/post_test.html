@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Raw POST Upload Tester</title>
+		<style>
+		body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; }
+		.tester-box { background-color: #252526; padding: 20px; border: 1px solid #454545; max-width: 600px; }
+		input, button { background-color: #3c3c3c; color: #fff; border: 1px solid #555; padding: 8px; margin: 5px 0; width: 95%; font-family: monospace;}
+		button { background-color: #0e639c; cursor: pointer; width: 100%; margin-top: 15px;}
+		button:hover { background-color: #1177bb; }
+		#console { background-color: #000; color: #00ff00; padding: 10px; margin-top: 20px; white-space: pre-wrap; border-left: 3px solid #0e639c; min-height: 100px; overflow-y: auto;}
+		</style>
+	</head>
+	<body>
+
+		<div class="tester-box">
+			<h2>Webserv Pure POST Tester</h2>
+
+			<label for="uriInput">Target URI (Modify this to test 403, 404, 409, etc.):</label>
+			<input type="text" id="uriInput" value="/test_file.txt">
+
+			<label for="fileInput">Select File to Upload:</label>
+			<input type="file" id="fileInput">
+
+			<button onclick="executeRawPost()">Execute POST Request</button>
+
+			<div id="console">Ready...</div>
+		</div>
+
+		<script>
+		async function executeRawPost() {
+			const uri = document.getElementById('uriInput').value;
+			const fileInput = document.getElementById('fileInput');
+			const term = document.getElementById('console');
+
+			if (fileInput.files.length === 0) {
+				term.innerText = "Error: Select a file first.";
+				return;
+			}
+
+			const file = fileInput.files[0];
+			term.innerText = `[${new Date().toLocaleTimeString()}] Sending POST request...\n`;
+			term.innerText += `-> URI: ${uri}\n`;
+			term.innerText += `-> Payload Size: ${file.size} bytes\n\n`;
+
+			try {
+				// By passing the File object directly, fetch omits multipart boundaries.
+				const response = await fetch(uri, {
+					method: 'POST',
+					body: file, 
+					headers: {
+						'Content-Type': file.type || 'application/octet-stream'
+					}
+				});
+
+				term.innerText += `--- SERVER RESPONSE ---\n`;
+				term.innerText += `Status Code: ${response.status} ${response.statusText}\n`;
+
+				response.headers.forEach((value, key) => {
+					term.innerText += `Header [${key}]: ${value}\n`;
+				});
+
+			} catch (error) {
+				term.innerText += `Network/Fetch Error: ${error.message}\n(Check if your webserver is running and accepting connections)`;
+			}
+		}
+		</script>
+	</body>
+</html>

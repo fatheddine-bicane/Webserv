@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multipart POST Tester</title>
+    <style>
+        body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        .tester-box { background-color: #252526; padding: 20px; border: 1px solid #454545; max-width: 600px; }
+        input, button { background-color: #3c3c3c; color: #fff; border: 1px solid #555; padding: 8px; margin: 5px 0; width: 95%; font-family: monospace;}
+        button { background-color: #0e639c; cursor: pointer; width: 100%; margin-top: 15px;}
+        button:hover { background-color: #1177bb; }
+        #console { background-color: #000; color: #00ff00; padding: 10px; margin-top: 20px; white-space: pre-wrap; border-left: 3px solid #0e639c; min-height: 100px; overflow-y: auto;}
+    </style>
+</head>
+<body>
+
+    <div class="tester-box">
+        <h2>Webserv Multipart POST Tester</h2>
+        
+        <!-- Points to the directory target as required by your C++ logic -->
+        <label for="uriInput">Target Directory URI (Test 404, 403, 409 here):</label>
+        <input type="text" id="uriInput" value="/uploads/">
+        
+        <form id="uploadForm">
+            <label for="fileInput">Select File(s) to Upload:</label>
+            <input type="file" id="fileInput" name="upload_file" multiple>
+            
+            <label for="textInput">Optional Form Field (Tests text part parsing):</label>
+            <input type="text" id="textInput" name="description" value="dummy payload">
+            
+            <button type="submit">Execute Multipart POST</button>
+        </form>
+        
+        <div id="console">Ready...</div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const uri = document.getElementById('uriInput').value;
+            const form = document.getElementById('uploadForm');
+            const term = document.getElementById('console');
+            
+            // FormData object automatically sets Content-Type to multipart/form-data
+            // and generates the unique boundary string for the payload.
+            const formData = new FormData(form);
+
+            term.innerText = `[${new Date().toLocaleTimeString()}] Sending Multipart POST request...\n`;
+            term.innerText += `-> Target Directory URI: ${uri}\n\n`;
+
+            try {
+                const response = await fetch(uri, {
+                    method: 'POST',
+                    body: formData 
+                });
+
+                term.innerText += `--- SERVER RESPONSE ---\n`;
+                term.innerText += `Status Code: ${response.status} ${response.statusText}\n`;
+                
+                response.headers.forEach((value, key) => {
+                    term.innerText += `Header [${key}]: ${value}\n`;
+                });
+
+            } catch (error) {
+                term.innerText += `Network/Fetch Error: ${error.message}\n(Check if your webserver is running and accepting connections)`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -61,6 +61,8 @@ public:
 private:
 	// INFO: url parsers helpers
 	void	splitURLFromQeury();
+	int		hexCharToInt(char c);
+	void	decodeUriComponent(String& uri_component);
 	void	checkPotentialCGIRequest();
 	bool	findScriptInterpreter(const String& extention);
 	void	resolveFilePath();
@@ -82,8 +84,21 @@ private:
 	void	renderDirectoryListing();
 
 
-
+	// INFO: post helpers
 	void	processPostRequest();
+	bool	isMultiPartFromData();
+	bool	isDirectory(const String& path);
+	void	ensureDirectoryExists();
+	void	handleMultipartUpload();
+	String	getBoundary();
+	String	sanitizeFilename(const String& filename);
+	void	handleNonMultipartUpload();
+	void	handleWhereTargetExists(struct stat& target_info);
+	void	handleWhereTargetDoesNotExists();
+	void	removeTmpBodyFile(const String& tmpFileName);
+
+
+
 	void	processDeleteRequest();
 	void	processMalformedRequest();
 
