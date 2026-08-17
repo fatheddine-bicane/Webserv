@@ -3,7 +3,7 @@
 #include "../Definitions/ClientConnection.hpp"
 #include "../../../HTTP_response_processer/Definitions/Response.hpp"
 #include "../../Typedef.hpp"
-#include "../../../Process_request/Definitions/ProcessRequest.hpp"
+#include "../../../HTTP_request_processer/Definitions/ProcessRequest.hpp"
 
 ClientConnection::ClientConnection(SOCKET fd,
 								   String& ip_port,

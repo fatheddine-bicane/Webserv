@@ -17,7 +17,7 @@
 #include "../../Connection/Definitions/ServerConnection.hpp"
 #include "../../Connection/Definitions/ClientConnection.hpp"
 #include "../../Connection/Exceptions/ConnectionExceptions.hpp"
-#include "../../../Process_request/Definitions/ProcessRequest.hpp"
+#include "../../../HTTP_request_processer/Definitions/ProcessRequest.hpp"
 #include "../../Typedef.hpp"
 
 #define MAX_EVENTS 10
@@ -35,6 +35,7 @@ public:
 	std::ofstream error_log;
 	std::vector<pid_t>	cgis_to_reap;
 	std::vector<Connection*>	server_sockets;
+	std::map<SOCKET, ClientConnection*> client_sockets;
 	static sig_atomic_t	signal_status;
 
 public:
@@ -54,6 +55,8 @@ public:
 	void	removeClient(ClientConnection* client_connection);
 	void	reapCGIUnfinishedProcesses();
 	static void	catch_sigint(sig_atomic_t signum);
-	static void cleanup(Connection* connection);
+	static void cleanup_server(Connection* connection);
+	static void cleanup_client(
+				const std::pair<SOCKET, ClientConnection*>& client);
 	bool	isServerInterupted();
 };

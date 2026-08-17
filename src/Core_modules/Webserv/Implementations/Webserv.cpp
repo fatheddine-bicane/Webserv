@@ -25,7 +25,11 @@ Webserv::~Webserv() {
 
 	std::for_each(this->server_sockets.begin(),
 				  this->server_sockets.end(),
-				  Webserv::cleanup);
+				  Webserv::cleanup_server);
+
+	std::for_each(this->client_sockets.begin(),
+				  this->client_sockets.end(),
+				  Webserv::cleanup_client);
 }
 
 // -------------------------------------------------
@@ -83,14 +87,22 @@ void	Webserv::addNewClientConnection(Connection* connection) {
 		delete client_connection;
 		throw ConnectionException("epoll_ctl()");
 	}
+
+	this->client_sockets[client_socket] = client_connection;
 }
 
 
 
 void	Webserv::removeClient(ClientConnection* client_connection) {
     epoll_ctl(this->epfd, EPOLL_CTL_DEL, client_connection->fd, NULL);
+
+	std::map<SOCKET, ClientConnection*>::iterator connection;
+	connection = this->client_sockets.find(client_connection->fd);
+
     CloseSocket(client_connection->fd);
     delete client_connection;
+	this->client_sockets.erase(connection);
+
 }
 
 
@@ -124,9 +136,16 @@ void Webserv::catch_sigint(sig_atomic_t signum) {
 
 
 
-void Webserv::cleanup(Connection* connection) {
+void Webserv::cleanup_server(Connection* connection) {
 	CloseSocket(connection->fd);
 	delete connection;
+}
+
+
+
+void	Webserv::cleanup_client(
+				 const std::pair<SOCKET, ClientConnection*>& client) {
+	cleanup_server(client.second);
 }
 
 
