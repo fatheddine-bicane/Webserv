@@ -787,54 +787,23 @@ void	ProcessRequest::renderDirectoryListing() {
 // -----------------------------------------------------------
 
 void ProcessRequest::processPostRequest(){
+	// check if the current llocation allow write/execute mehtods
 	std::set<String>& dav_methods =
 		this->_request.location->shared_directives.dav_methods;
 	if (dav_methods.find("POST") == dav_methods.end()) {
 		throw ProcessRequestException(MethodNotAllowed);
 	}
 
-
-	// 405 Method Not Allowed
-
-
-	// // 1 check if POST is allowed in _location
-	// if (!this->_location->limit_except.empty()) {
-	// 	String methodName = getMethodName(this->_request.method);
-	// 	if (this->_location->limit_except.find(methodName) == this->_location->limit_except.end()) {
-	// 		throw ProcessRequestException(MethodNotAllowed);
-	// 	}
-	// }
-	// 2 check if location is for CGI
-	// if cgi ...
-	// else
-
-	// 3 Handle as upload
-	String root = this->_request.location->shared_directives.root;
-	if (!root.empty() && root[root.length() - 1] == '/') {
-		root.erase(root.length() - 1);
-	}
-
-
-
-	// Headers::iterator content_type = this->_request.headers.find("content-type");
-	// bool is_multipart = (content_type != this->_request.headers.end()
-	// 	&& isMultiPartFromData(content_type->second));
-
 	if (isMultiPartFromData()) {
-		String upload_dir = "./nginx" + root + this->_script_name;
-		if (!ensureDirectoryExists(upload_dir)) {
-			throw ProcessRequestException(InternalServerError);
-		}
 
-		try {
-			handleMultipartUpload(this->_request.tmp_body_file_name, upload_dir);
-			removeTmpBodyFile(this->_request.tmp_body_file_name);
-			this->_request.status_code = Created;
-		} catch (...) {
-			removeTmpBodyFile(this->_request.tmp_body_file_name);
-			throw;
-		}
+		ensureDirectoryExists();
+
+		handleMultipartUpload();
+
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		this->_request.status_code = Created;
 	}
+
 	else {
 		struct stat target_info;
 
@@ -912,53 +881,6 @@ void ProcessRequest::processPostRequest(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-//
-//
-//
-//
-// 		String filePath = root + this->_request.target_resource;
-// 		String outputPath = "./nginx/" + filePath;
-// 		size_t parentSeparator = outputPath.find_last_of('/');
-// 		if (parentSeparator != String::npos) {
-// 			String parentDir = outputPath.substr(0, parentSeparator);
-// 			if (!ensureDirectoryExists(parentDir)) {
-// 				throw ProcessRequestException(InternalServerError);
-// 			}
-// 		}
-//
-// 		std::ifstream inFile(this->_request.tmp_body_file_name.c_str(), std::ios::binary);
-// 		if (!inFile) {
-// 			throw ProcessRequestException(InternalServerError);
-// 		}
-//
-// 		std::ofstream outFile(outputPath.c_str(), std::ios::binary);
-// 		if (!outFile) {
-// 			inFile.close();
-// 			throw ProcessRequestException(InternalServerError);
-// 		}
-//
-// 		outFile << inFile.rdbuf();
-//
-// 		inFile.close();
-// 		outFile.close();
-// 		removeTmpBodyFile(this->_request.tmp_body_file_name);
-// 		this->_request.status_code = Created;
-// 	}
-//
-// }
-//
-
-
 bool	ProcessRequest::isMultiPartFromData(){
 	Headers::iterator content_type = this->_request.headers.find("content-type");
 
@@ -982,53 +904,49 @@ bool ProcessRequest::isDirectory(const String& path) {
 	return S_ISDIR(pathInfo.st_mode);
 }
 
-bool ProcessRequest::ensureDirectoryExists(const String& path) {
-	if (path.empty() || isDirectory(path)) {
-		return true;
-	}
+void	ProcessRequest::ensureDirectoryExists() {
+	struct stat target_info;
 
-	size_t separator = path.find_last_of('/');
-	if (separator != String::npos) {
-		String parent = path.substr(0, separator);
-		if (!parent.empty() && !ensureDirectoryExists(parent)) {
-			return false;
+	if (stat(this->_file_path.c_str(), &target_info) != 0) {
+		if (errno == ENONET) {
+			throw ProcessRequestException(NotFound);
+		} else {
+			throw ProcessRequestException(Forbidden);
 		}
 	}
 
-	if (mkdir(path.c_str(), 0755) == 0) {
-		return true;
+	if (!S_ISDIR(target_info.st_mode)) {
+		throw ProcessRequestException(Conflict);
 	}
 
-	return isDirectory(path);
+	if (access(this->_file_path.c_str(), W_OK) == -1) {
+		throw ProcessRequestException(Forbidden);
+	}
 }
 
 
 
-// static String getMethodName(HTTPMethod method) {
-// 	switch (method) {
-// 		case GET: return "GET";
-// 		case POST: return "POST";
-// 		case DELETE: return "DELETE";
-// 		default: return "";
-// 	}
-// }
+void	ProcessRequest::handleMultipartUpload() {
+	// handleMultipartUpload(this->_request.tmp_body_file_name, upload_dir);
+	String& tmp_file_name = this->_request.tmp_body_file_name;
+	String& upload_dir = this->_file_path;
 
+	String boundary = getBoundary();
+	if (boundary.empty()) {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(BadRequest);
+	}
 
+	std::ifstream inFile(tmp_file_name.c_str(), std::ios::binary);
+	if (!inFile.is_open()) {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(InternalServerError);
+	}
 
-void	ProcessRequest::handleMultipartUpload(String& tmpFileName,
-											  String& uploadDir) {
-
-	String	header = this->_request.headers.find("content-type")->second;
-	String boundary = getBoundary(header);
-	if (boundary.empty()) throw ProcessRequestException(BadRequest);
-
-	std::ifstream inFile(tmpFileName.c_str(), std::ios::binary);
-	if (!inFile.is_open()) throw ProcessRequestException(InternalServerError);
-
+	// read headers line-by-line until
+	// filename is found and \r\n\r\n is reached
 	String line;
 	String filename;
-
-	// 1. Read headers line-by-line until filename is found and \r\n\r\n is reached
 	while (std::getline(inFile, line)) {
 		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
@@ -1042,7 +960,8 @@ void	ProcessRequest::handleMultipartUpload(String& tmpFileName,
 			}
 		}
 
-		// Blank line marks the end of headers and start of raw binary file data
+		// blank line marks the end of headers
+		// and start of raw binary file data
 		if (line.empty()) {
 			break;
 		}
@@ -1050,36 +969,37 @@ void	ProcessRequest::handleMultipartUpload(String& tmpFileName,
 
 	if (filename.empty()) {
 		inFile.close();
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
 		throw ProcessRequestException(BadRequest);
 	}
 
-	// 2. Open output file destination
-	String finalFilePath = uploadDir + "/" + filename;
+	// open output file destination
+	String finalFilePath = upload_dir + "/" + filename;
 	std::ofstream outFile(finalFilePath.c_str(), std::ios::binary);
 	if (!outFile.is_open()) {
 		inFile.close();
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
 		throw ProcessRequestException(InternalServerError);
 	}
 
-	// 3. Stream body using constant 8KB memory window
-	const size_t BUFFER_SIZE = 8192;
-	char buffer[BUFFER_SIZE];
+	// stream body using constant 8KB memory window
+	char buffer[_8KB];
 
 	String boundaryMarker = "\r\n--" + boundary;
 	String slidingWindow;
 
-	while (inFile.read(buffer, BUFFER_SIZE) || inFile.gcount() > 0) {
+	while (inFile.read(buffer, _8KB) || inFile.gcount() > 0) {
 		size_t bytesRead = inFile.gcount();
 		slidingWindow.append(buffer, bytesRead);
 
-		// Find boundary position inside sliding window
+		// find boundary position inside sliding window
 		size_t boundaryPos = slidingWindow.find(boundaryMarker);
 		if (boundaryPos != String::npos) {
 			outFile.write(slidingWindow.data(), boundaryPos);
 			break;
 		}
 
-		// Keep safe margin to prevent splitting the boundary across buffer chunks
+		// keep safe margin to prevent splitting the boundary across buffer chunks
 		if (slidingWindow.size() > boundaryMarker.size()) {
 			size_t safeWriteSize = slidingWindow.size() - boundaryMarker.size();
 			outFile.write(slidingWindow.data(), safeWriteSize);
@@ -1093,9 +1013,12 @@ void	ProcessRequest::handleMultipartUpload(String& tmpFileName,
 
 
 
-String ProcessRequest::getBoundary(const String& header) {
+String ProcessRequest::getBoundary() {
+	String	header = this->_request.headers.find("content-type")->second;
 	size_t pos = header.find("boundary=");
+
 	if (pos == String::npos) return "";
+
 	return header.substr(pos + 9);
 }
 

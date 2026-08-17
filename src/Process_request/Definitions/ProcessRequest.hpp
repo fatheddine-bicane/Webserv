@@ -89,10 +89,9 @@ private:
 
 	bool	isMultiPartFromData();
 	bool	isDirectory(const String& path);
-	bool	ensureDirectoryExists(const String& path);
-	void	handleMultipartUpload(String& tmpFileName,
-								  String& uploadDir);
-	String	getBoundary(const String& header);
+	void	ensureDirectoryExists();
+	void	handleMultipartUpload();
+	String	getBoundary();
 	String	sanitizeFilename(const String& filename);
 	void	removeTmpBodyFile(const String& tmpFileName);
 
