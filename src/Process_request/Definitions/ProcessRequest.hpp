@@ -86,13 +86,15 @@ private:
 
 	// INFO: post helpers
 	void	processPostRequest();
-
 	bool	isMultiPartFromData();
 	bool	isDirectory(const String& path);
 	void	ensureDirectoryExists();
 	void	handleMultipartUpload();
 	String	getBoundary();
 	String	sanitizeFilename(const String& filename);
+	void	handleNonMultipartUpload();
+	void	handleWhereTargetExists(struct stat& target_info);
+	void	handleWhereTargetDoesNotExists();
 	void	removeTmpBodyFile(const String& tmpFileName);
 
 

@@ -795,7 +795,6 @@ void ProcessRequest::processPostRequest(){
 	}
 
 	if (isMultiPartFromData()) {
-
 		ensureDirectoryExists();
 
 		handleMultipartUpload();
@@ -805,77 +804,7 @@ void ProcessRequest::processPostRequest(){
 	}
 
 	else {
-		struct stat target_info;
-
-		// if the target exists
-		if (stat(this->_file_path.c_str(), &target_info) == 0) {
-			// target is an existing folder
-			if (S_ISDIR(target_info.st_mode)) {
-				removeTmpBodyFile(this->_request.tmp_body_file_name);
-				throw ProcessRequestException(Forbidden);
-			}
-
-			// target is an existing file
-			else if (S_ISREG(target_info.st_mode)) {
-				if (std::rename(this->_request.tmp_body_file_name.c_str(),
-					this->_file_path.c_str()) != 0) {
-
-					removeTmpBodyFile(this->_request.tmp_body_file_name);
-					throw ProcessRequestException(InternalServerError);
-				}
-				this->_request.status_code = NoContent;
-			}
-
-			// its a non regular file
-			else {
-				removeTmpBodyFile(this->_request.tmp_body_file_name);
-				throw ProcessRequestException(Forbidden);
-			}
-		}
-
-		else {
-			// stat failed for permision
-			if (errno != ENOENT) {
-				removeTmpBodyFile(this->_request.tmp_body_file_name);
-				throw ProcessRequestException(Forbidden);
-			}
-
-			// target does not exist Check if parent directory exists.
-			size_t separator = this->_file_path.find_last_of('/');
-
-			// server reach this point failing to map the
-			// requested file to a path
-			if (separator == String::npos) {
-				removeTmpBodyFile(this->_request.tmp_body_file_name);
-				throw ProcessRequestException(InternalServerError);
-			}
-
-			// else
-			String parent_dir = this->_file_path.substr(0, separator);
-			struct stat parent_info;
-
-			// Parent exists. Move temp file here.
-			if (stat(parent_dir.c_str(), &parent_info) == 0
-				&& S_ISDIR(parent_info.st_mode)) {
-
-				if (std::rename(this->_request.tmp_body_file_name.c_str(),
-					this->_file_path.c_str()) != 0) {
-
-					removeTmpBodyFile(this->_request.tmp_body_file_name);
-					throw ProcessRequestException(InternalServerError);
-				}
-
-				this->_client_connection.response
-				.appendHeaders("Location", this->_script_name);
-				this->_request.status_code = Created;
-			}
-
-			// parent directory does not exist
-			else {
-				removeTmpBodyFile(this->_request.tmp_body_file_name);
-				throw ProcessRequestException(Conflict);
-			}
-		}
+		handleNonMultipartUpload();
 	}
 }
 
@@ -1038,6 +967,94 @@ String	ProcessRequest::sanitizeFilename(const String& filename) {
 	}
 
 	return filename.substr(slashPos + 1);
+}
+
+
+
+void	ProcessRequest::handleNonMultipartUpload() {
+	struct stat target_info;
+
+	// if the target exists
+	if (stat(this->_file_path.c_str(), &target_info) == 0) {
+		handleWhereTargetExists(target_info);
+	}
+
+	else {
+		handleWhereTargetDoesNotExists();
+	}
+}
+
+
+
+void	ProcessRequest::handleWhereTargetExists(struct stat& target_info) {
+	// target is an existing folder
+	if (S_ISDIR(target_info.st_mode)) {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(Forbidden);
+	}
+
+	// target is an existing file
+	else if (S_ISREG(target_info.st_mode)) {
+		if (std::rename(this->_request.tmp_body_file_name.c_str(),
+				  this->_file_path.c_str()) != 0) {
+
+			removeTmpBodyFile(this->_request.tmp_body_file_name);
+			throw ProcessRequestException(InternalServerError);
+		}
+		this->_request.status_code = NoContent;
+	}
+
+	// its a non regular file
+	else {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(Forbidden);
+	}
+}
+
+
+
+void	ProcessRequest::handleWhereTargetDoesNotExists() {
+	// stat failed for permision
+	if (errno != ENOENT) {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(Forbidden);
+	}
+
+	// target does not exist Check if parent directory exists.
+	size_t separator = this->_file_path.find_last_of('/');
+
+	// server reach this point failing to map the
+	// requested file to a path
+	if (separator == String::npos) {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	// else
+	String parent_dir = this->_file_path.substr(0, separator);
+	struct stat parent_info;
+
+	// Parent exists. Move temp file here.
+	if (stat(parent_dir.c_str(), &parent_info) == 0
+		&& S_ISDIR(parent_info.st_mode)) {
+
+		if (std::rename(this->_request.tmp_body_file_name.c_str(),
+				  this->_file_path.c_str()) != 0) {
+
+			removeTmpBodyFile(this->_request.tmp_body_file_name);
+			throw ProcessRequestException(InternalServerError);
+		}
+
+		this->_client_connection.response
+			.appendHeaders("Location", this->_script_name);
+		this->_request.status_code = Created;
+	}
+
+	// parent directory does not exist
+	else {
+		removeTmpBodyFile(this->_request.tmp_body_file_name);
+		throw ProcessRequestException(Conflict);
+	}
 }
 
 
