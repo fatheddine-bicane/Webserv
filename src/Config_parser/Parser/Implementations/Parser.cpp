@@ -483,12 +483,12 @@ void	Parser::parseDavMethods(SharedDirectives& directive_context) {
 
 	while (match(token, VALUE)) {
 		// ignore case sensitivity
-		if (token.lexeme == "delete") {
+		if (token.lexeme == "delete" || token.lexeme == "post") {
 			String& lexeme = token.lexeme;
 			std::transform(lexeme.begin(), lexeme.end(), lexeme.begin(), ::toupper);
 		}
 
-		if (token.lexeme == "DELETE") {
+		if (token.lexeme == "DELETE" || token.lexeme == "POST") {
 			// match nginx rejecting duplicates
 			std::set<String>& dav_methods = directive_context.dav_methods;
 			if (dav_methods.find(token.lexeme) != dav_methods.end()) {
