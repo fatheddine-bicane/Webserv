@@ -14,7 +14,7 @@ ClientConnection::ClientConnection(SOCKET fd,
 	  servers(servers),
 	  response(this) {
 	this->server = NULL;
-	this->process_request = new ProcessRequest(this->request, *this->server, *this);
+	this->process_request = new ProcessRequest(this->request, *this);
 }
 
 

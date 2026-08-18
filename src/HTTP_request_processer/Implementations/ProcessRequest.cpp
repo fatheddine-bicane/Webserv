@@ -18,10 +18,9 @@
 // INFO: constructor
 // -----------------------------------------------------------
 
-ProcessRequest::ProcessRequest(Request& request, Server& server,
+ProcessRequest::ProcessRequest(Request& request,
 							   ClientConnection& client_connection)
 	: _request(request),
-	  _server(server),
 	  _client_connection(client_connection),
 	  _is_cgi_request(false) {
 }

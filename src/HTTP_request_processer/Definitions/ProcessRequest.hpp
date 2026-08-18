@@ -23,7 +23,6 @@ private:
 
 private:
 	Request&	_request;
-	Server&		_server;
 	ClientConnection&	_client_connection;
 
 	// cgi
@@ -45,7 +44,7 @@ private:
 
 public:
 	// INFO: constructor
-	ProcessRequest(Request& request, Server& server,
+	ProcessRequest(Request& request,
 				   ClientConnection& client_connection);
 
 
