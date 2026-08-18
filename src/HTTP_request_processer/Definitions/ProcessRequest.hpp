@@ -96,9 +96,6 @@ private:
 	void	handleWhereTargetDoesNotExists();
 	void	removeTmpBodyFile(const String& tmpFileName);
 
-
-
+	// INFO: delete request
 	void	processDeleteRequest();
-	void	processMalformedRequest();
-
 };
