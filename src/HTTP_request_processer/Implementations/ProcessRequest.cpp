@@ -246,13 +246,8 @@ void	ProcessRequest::parseCGIHeaders() {
 			continue;
 		}
 
-		if (lower_key == "content-type") {
-			this->_client_connection.response.appendHeaders("Content-Type", value);
-			continue;
-		}
-
-		if (lower_key == "content-length") {
-			this->_client_connection.response.appendHeaders("Content-Length", value);
+		else {
+			this->_client_connection.response.appendHeaders(key, value);
 			continue;
 		}
 	}
