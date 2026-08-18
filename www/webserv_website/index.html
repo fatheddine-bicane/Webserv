@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>webserv // showcase</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<header>
+		<h1>webserv <span>showcase &amp; test harness</span></h1>
+		<p class="subtitle">HTTP/1.1 server — C++98 — epoll multiplexing</p>
+	</header>
+
+	<main>
+		<section class="card">
+			<h2>1. Static file serving</h2>
+			<p>You're looking at it — this page, its CSS, and an image are all served from disk with correct
+				<code>Content-Type</code> detection.
+			</p>
+			<img src="assets/logo.png" alt="server icon" width="80"
+				onerror="this.outerHTML='<em>(add assets/logo.png to test image Content-Type)</em>'">
+		</section>
+
+		<section class="card">
+			<h2>2. Directory listing (autoindex)</h2>
+			<p><a href="/upload/">/upload/</a> — autoindex <strong>on</strong>, no index file → generated listing.</p>
+			<p><a href="/protected/">/protected/</a> — autoindex <strong>off</strong> → expect 403.</p>
+		</section>
+
+		<section class="card">
+			<h2>3. Redirection</h2>
+			<p><a href="/old-page">/old-page</a> → should 301/302 redirect to a new location.</p>
+		</section>
+
+		<section class="card">
+			<h2>4. Custom error pages</h2>
+			<ul class="linklist">
+				<li><a href="/this-does-not-exist">/this-does-not-exist</a> → 404</li>
+				<li><a href="/protected/">/protected/</a> → 403</li>
+				<li><a href="/get-only/" onclick="return testWrongMethod(event)">POST to a GET-only location</a> → 405
+			</ul>
+		</section>
+
+		<section class="card">
+			<h2>5. Upload (POST) — Raw Data</h2>
+			<!-- Form submission handled via JS to send raw body -->
+			<form id="raw-upload-form" onsubmit="return handleRawUpload(event)">
+				<input type="file" id="raw-file-input" required>
+				<button type="submit">Upload Raw File</button>
+			</form>
+			<div id="upload-status" style="margin-top: 10px;"></div>
+		</section>
+
+		<section class="card">
+			<h2>6. Delete (JS / fetch)</h2>
+			<p>Lists files in <code>/uploads/</code> and deletes them via <code>DELETE</code> requests.</p>
+			<ul id="file-list">
+				<li>loading…</li>
+			</ul>
+			<button onclick="loadFiles()">Refresh list</button>
+		</section>
+
+		<section class="card">
+			<h2>7. CGI</h2>
+			<p><a href="/cgi-bin/hello.py">/cgi-bin/hello.py</a> — dynamic output from a script.</p>
+			<p><a href="/cgi-bin/script.py">/cgi-bin/script.py</a> — dynamic output from a script.</p>
+			<p><a href="/cgi-bin/hello.js">/cgi-bin/hello.js</a> — dynamic output from a script.</p>
+		</section>
+
+	</main>
+
+	<script src="script.js"></script>
+</body>
+
+</html>
