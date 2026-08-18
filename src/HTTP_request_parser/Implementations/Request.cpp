@@ -40,6 +40,10 @@ void	Request::attemptRequestParse() {
 			default: break;
 		}
 	}
+
+	if (isRequestState(MALFORMED)) {
+		remove(this->tmp_body_file_name.c_str());
+	}
 }
 
 
