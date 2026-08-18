@@ -67,6 +67,7 @@ public:
 
 	// INFO: helper functions
 private:
+	String	getHttpDateHeaderValue();
 	void	populateStagingBufferFromFileToSend();
 	void	sendStagedBufferPayload();
 	void	buildStatusLine(HTTPStatus HTTP_status);

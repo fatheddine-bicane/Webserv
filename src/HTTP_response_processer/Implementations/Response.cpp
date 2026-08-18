@@ -17,8 +17,9 @@ Response::Response(ClientConnection* client_connection)
 	  content_length_is_set(false),
 	  is_cgi_response(false) {
 
-	appendHeaders("Connection", "close");
 	appendHeaders("Server", "Webserv/1.0");
+	appendHeaders("Date", getHttpDateHeaderValue());
+	appendHeaders("Connection", "close");
 }
 
 Response::~Response() {
@@ -150,6 +151,23 @@ void	Response::appendCTLF() {
 
 // INFO: helpers
 // -----------------------------------------------------------
+
+
+
+String	Response::getHttpDateHeaderValue() {
+	char buffer[128];
+	time_t rawtime;
+
+	// get current time
+	time(&rawtime);
+	// convert to coordinated universal time
+	struct tm* timeinfo = gmtime(&rawtime);
+
+	// format according to RFC (Tue, D MM YYYY HH:MM:SS GMT)
+	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", timeinfo);
+
+	return String(buffer);
+}
 
 
 
