@@ -492,6 +492,12 @@ void	ProcessRequest::processCGIRequest() {
 		throw ProcessRequestException(Forbidden);
 	}
 
+	// check if the interpreter exists on the server
+	String interpreter = this->_request.location->cgi_pass[this->_interpreter];
+	if (access(interpreter.c_str(), F_OK | X_OK) == -1) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
 	std::vector<String> env;
 
 	setPathEnvVariables(env);
