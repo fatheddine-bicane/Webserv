@@ -71,7 +71,10 @@ private:
 	void	parseIndex(SharedDirectives& directive_context);
 	void	parseDavMethods(SharedDirectives& directive_context);
 	String	parseServerName();
-	void	parseReturn(std::pair<int, String>& return_d);
+	void	parseReturn(
+		std::pair<bool, std::pair<int, String> >& return_d);
+
+	std::pair<bool, std::pair<int, String> >return_d;
 	void	parseAlias(Location& location_context);
 	void	parseLimitExcept(Location& location_context);
 	void	parseCgiPass(Location& location_context);

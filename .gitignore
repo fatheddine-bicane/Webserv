@@ -4,3 +4,4 @@
 *.dSYM
 webserv
 Log
+error_log.txt

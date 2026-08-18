@@ -48,7 +48,7 @@ public:
 	SharedDirectives						shared_directives;
 	String									alias;
 	std::set<String>						limit_except;
-	std::pair<int, String>					return_d;
+	std::pair<bool, std::pair<int, String> >return_d;
 	std::map<String, String>				cgi_pass;
 
 public:
@@ -60,7 +60,6 @@ class Server {
 public:
 	SharedDirectives		shared_directives;
 	std::list<Location>		locations;
-	std::pair<int, String>	return_d;
 
 public:
 	Server() {}
