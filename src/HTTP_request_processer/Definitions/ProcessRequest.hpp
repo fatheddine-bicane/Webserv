@@ -23,7 +23,6 @@ private:
 
 private:
 	Request&	_request;
-	Server&		_server;
 	ClientConnection&	_client_connection;
 
 	// cgi
@@ -45,7 +44,7 @@ private:
 
 public:
 	// INFO: constructor
-	ProcessRequest(Request& request, Server& server,
+	ProcessRequest(Request& request,
 				   ClientConnection& client_connection);
 
 
@@ -97,9 +96,6 @@ private:
 	void	handleWhereTargetDoesNotExists();
 	void	removeTmpBodyFile(const String& tmpFileName);
 
-
-
+	// INFO: delete request
 	void	processDeleteRequest();
-	void	processMalformedRequest();
-
 };

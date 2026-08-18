@@ -18,10 +18,9 @@
 // INFO: constructor
 // -----------------------------------------------------------
 
-ProcessRequest::ProcessRequest(Request& request, Server& server,
+ProcessRequest::ProcessRequest(Request& request,
 							   ClientConnection& client_connection)
 	: _request(request),
-	  _server(server),
 	  _client_connection(client_connection),
 	  _is_cgi_request(false) {
 }
@@ -66,14 +65,9 @@ void	ProcessRequest::processRequest() {
 		switch (this->_request.method) {
 			case GET: processGetRequest(); break;
 
-			case POST:
-				processPostRequest();
-				// handle post
-				break;
+			case POST: processPostRequest(); break;
 
-			case DELETE:
-				// handle delete
-				break;
+			case DELETE: processDeleteRequest(); break;
 		}
 	}
 
@@ -1065,6 +1059,41 @@ void	ProcessRequest::removeTmpBodyFile(const String& tmpFileName) {
 		remove(tmpFileName.c_str());
 	}
 }
+
+
+
+void	ProcessRequest::processDeleteRequest(){
+	if(access(this->_file_path.c_str(), F_OK) == -1) {
+		throw ProcessRequestException(NotFound);
+	}
+
+	struct stat info;
+	if (stat(this->_file_path.c_str(), &info) != 0) {
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	if(S_ISDIR(info.st_mode)){
+		throw ProcessRequestException(MethodNotAllowed);
+	}
+
+	if (!S_ISREG(info.st_mode)){
+		throw ProcessRequestException(Forbidden);
+	}
+
+	if(remove(this->_file_path.c_str()) == -1) {
+		if (errno == EACCES || errno == EPERM) {		
+			throw ProcessRequestException(Forbidden);
+		}
+
+		throw ProcessRequestException(InternalServerError);
+	}
+
+	this->_request.status_code = NoContent;
+	this->_request.setRequestState(COMPLETE);
+}
+
+
+
 
 
 // -----------------------------------------------------------
