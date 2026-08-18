@@ -1069,6 +1069,14 @@ void	ProcessRequest::removeTmpBodyFile(const String& tmpFileName) {
 
 
 void	ProcessRequest::processDeleteRequest(){
+
+	// check delete permisionso
+	std::set<String>& dav_methods =
+		this->_request.location->shared_directives.dav_methods;
+	if (dav_methods.find("DELETE") == dav_methods.end()) {
+		throw ProcessRequestException(MethodNotAllowed);
+	}
+
 	if(access(this->_file_path.c_str(), F_OK) == -1) {
 		throw ProcessRequestException(NotFound);
 	}
